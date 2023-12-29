@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "extension_bundle"
+version = "0.1.0"
+description = ""
+authors = ["Roberto Arista <arista.rob@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "3.9.13"
+markdown = "^3.5.1"
+pyobjc = "^10.1"
+typing-extensions = "^4.9.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
