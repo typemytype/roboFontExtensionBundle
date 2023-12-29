@@ -1,37 +1,50 @@
-import os
-import hashlib
-import sys
-import shutil
-import time
 import datetime
-import tempfile
-import markdown
-import subprocess
-import warnings
+import hashlib
 import inspect
-
-from markdown.extensions.toc import TocExtension as markdownTocExtension
-from markdown.extensions.tables import TableExtension as markdownTableExtension
-from markdown.extensions.fenced_code import FencedCodeExtension as markdownFencedCodeExtension
-from markdown.extensions.codehilite import CodeHiliteExtension as markdownCodeHiliteExtension
-
-from packaging import version
-
-from vanilla.dialogs import message
-from AppKit import NSApp, NSArray, NSBundle, NSCommandKeyMask, NSControlKeyMask, NSCriticalAlertStyle, NSDictionary, NSFileManager, NSImage, NSInformationalAlertStyle, NSMenu, NSMenuItem, NSURL, NSWorkspace
+import os
 import plistlib
+import shutil
+import subprocess
+import sys
+import tempfile
+import time
+import warnings
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Union
 
+import markdown
+from AppKit import NSURL  # type: ignore
+from AppKit import NSApp  # type: ignore
+from AppKit import NSArray  # type: ignore
+from AppKit import NSBundle  # type: ignore
+from AppKit import NSCommandKeyMask  # type: ignore
+from AppKit import NSControlKeyMask  # type: ignore
+from AppKit import NSDictionary  # type: ignore
+from AppKit import NSFileManager  # type: ignore
+from AppKit import NSImage  # type: ignore
+from AppKit import NSMenu  # type: ignore
+from AppKit import NSMenuItem  # type: ignore
+from AppKit import NSWorkspace  # type: ignore
 from lib.settings import applicationPluginRootPath, appName
-
 from lib.tools.misc import walkDirectoryForFile
 from lib.tools.notifications import PostBannerNotification
 from lib.tools.shortCutTools import allExistingShortKeys
+from markdown.extensions.codehilite import \
+    CodeHiliteExtension as markdownCodeHiliteExtension
+from markdown.extensions.fenced_code import \
+    FencedCodeExtension as markdownFencedCodeExtension
+from markdown.extensions.tables import TableExtension as markdownTableExtension
+from markdown.extensions.toc import TocExtension as markdownTocExtension
+from packaging import version
+from typing_extensions import Self
 
-from .scriptTools import ScriptRunner, Output
 from .extensionTools import PluginHelpWindow, askReinstallDeinstall
+from .scriptTools import Output, ScriptRunner
 
 
-class ExtensionBundle(object):
+@dataclass
+class ExtensionBundle:
 
     """
     An object to read, write and install extensions.
@@ -75,45 +88,54 @@ class ExtensionBundle(object):
     ```
     """
 
+    name: Union[str, None] = None
+    path: Union[Path, None] = None
+    libName: str = "lib"
+    htmlName: str ="html"
+    indexHTMLName: str ="index.html"
+    resourcesName: str ="resources"
+
     fileExtension = ".roboFontExt"
 
-    def __init__(self, name=None, path=None, libName="lib", htmlName="html", indexHTMLName="index.html", resourcesName="resources"):
+    def __post_init__(self):
         self._bundlePath = None
         self._infoDictCache = None
         self._resourcesNamesMapCache = None
 
-        self._libName = libName
-        self._resourcesName = resourcesName
+        self._libName = self.libName
+        self._resourcesName = self.resourcesName
         self._infoName = "info.plist"
         self._licenseName = "license"
         self._license = None
         self._requirementsName = "requirements.txt"
         self._requirements = None
-        self._HTMLName = htmlName
-        self._indexHTMLName = indexHTMLName
+        self._HTMLName = self.htmlName
+        self._indexHTMLName = self.indexHTMLName
         self._icon = None
 
         self._validationErrors = []
 
         # load the path or name
-        if name is not None and path is None:
-            if not name.lower().endswith(self.fileExtension.lower()):
-                name += self.fileExtension
-            path = os.path.join(applicationPluginRootPath, name)
+        if self.name is not None and self.path is None:
+            if not self.name.lower().endswith(self.fileExtension.lower()):
+                self.name += self.fileExtension
+            path = os.path.join(applicationPluginRootPath, self.name)
 
-        if path is not None:
+        if self.path is not None:
             path = os.path.realpath(path)
         self._bundlePath = path
 
         if path is not None:
             # check specific python versions and swap the lib path
-            currentPythonLibName = f"{libName}.{sys.version_info.major}.{sys.version_info.minor}"
+            currentPythonLibName = (
+                f"{libName}.{sys.version_info.major}.{sys.version_info.minor}"
+            )
             currentPythonLibPath = os.path.join(path, currentPythonLibName)
             if os.path.exists(currentPythonLibPath):
                 self._libName = currentPythonLibName
 
     @classmethod
-    def currentBundle(cls, filePath=None):
+    def currentBundle(cls, filePath=None) -> Self:
         """
         Return the current bundle.
 
@@ -136,20 +158,28 @@ class ExtensionBundle(object):
                 return ExtensionBundle(path=path)
         return None
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         if self._bundlePath is None:
             name = "None"
         else:
             name = self.fileName()
         return "<ExtensionBundle: %s>" % name
 
-    def bundleExists(self):
+    def bundleExists(self) -> bool:
         """
         Returns a bool indicating if the extension bundle exists.
         """
         return os.path.exists(self.bundlePath())
 
-    def save(self, path, libPath, htmlPath=None, resourcesPath=None, pycOnly=False, pycExclude=None):
+    def save(
+        self,
+        path,
+        libPath,
+        htmlPath=None,
+        resourcesPath=None,
+        pycOnly=False,
+        pycExclude=None,
+    ):
         """
         Save the extension to a path, with a given `libPath`.
 
@@ -179,8 +209,8 @@ class ExtensionBundle(object):
                 pycOnly = ["current"]
 
             env = os.environ.copy()
-            env['PATH'] += ":/usr/local/bin"
-            for key in ('PYTHONPATH', 'PYTHONHOME'):
+            env["PATH"] += ":/usr/local/bin"
+            for key in ("PYTHONPATH", "PYTHONHOME"):
                 if key in env:
                     del env[key]
             libName = self._libName
@@ -199,7 +229,13 @@ class ExtensionBundle(object):
 
                 excludedPyFiles = self.menuScriptPaths()
                 if pycExclude:
-                    excludedPyFiles.extend([os.path.join(self.libPath(), item) for item in pycExclude if isinstance(item, str)])
+                    excludedPyFiles.extend(
+                        [
+                            os.path.join(self.libPath(), item)
+                            for item in pycExclude
+                            if isinstance(item, str)
+                        ]
+                    )
                 if self.mainScript:
                     mainFile = self.mainScriptPath()
                     excludedPyFiles.append(mainFile)
@@ -209,7 +245,9 @@ class ExtensionBundle(object):
                 # get all .py files in the lib directory
                 pyFiles = walkDirectoryForFile(self.libPath())
                 # ignore the excluded .py files
-                pyFiles = [pyFile for pyFile in pyFiles if pyFile not in excludedPyFiles]
+                pyFiles = [
+                    pyFile for pyFile in pyFiles if pyFile not in excludedPyFiles
+                ]
                 code = f"""import os
 import py_compile
 
@@ -227,9 +265,14 @@ for pyFile in {pyFiles}:
                     with open(codeFile, "w") as f:
                         f.write(code)
                     try:
-                        subprocess.run([f"python{pycVersion}", codeFile], shell=False, env=env)
+                        subprocess.run(
+                            [f"python{pycVersion}", codeFile], shell=False, env=env
+                        )
                     except FileNotFoundError as e:
-                        print(f"The python version 'python{pycVersion}' is not installed\n", e)
+                        print(
+                            f"The python version 'python{pycVersion}' is not installed\n",
+                            e,
+                        )
 
         if htmlPath:
             shutil.copytree(htmlPath, self.HTMLPath())
@@ -246,6 +289,7 @@ for pyFile in {pyFiles}:
                 lf.write(self.license)
             except Exception:
                 import traceback
+
                 print("Writing license file %s failed:" % self.name)
                 print(traceback.format_exc(5))
                 print("*" * 20)
@@ -263,6 +307,7 @@ for pyFile in {pyFiles}:
                 rf.write(self.requirements)
             except Exception:
                 import traceback
+
                 print("Writing requirements file %s failed:" % self.name)
                 print(traceback.format_exc(5))
                 print("*" * 20)
@@ -295,49 +340,49 @@ for pyFile in {pyFiles}:
     # = paths =
     # =========
 
-    def bundlePath(self):
+    def bundlePath(self) -> Path:
         """
         Get the path of the extension bundle.
         """
         return self._bundlePath
 
-    def fileName(self):
+    def fileName(self) -> str:
         """
         Get the file name of the extension bundle.
         """
         return os.path.basename(self.bundlePath())
 
-    def libPath(self):
+    def libPath(self) -> Path:
         """
         Get the path to the lib folder.
         """
         return os.path.join(self.bundlePath(), self._libName)
 
-    def HTMLPath(self):
+    def HTMLPath(self) -> Path:
         """
         Get the path to the HTML folder.
         """
         return os.path.join(self.bundlePath(), self._HTMLName)
 
-    def resourcesPath(self):
+    def resourcesPath(self) -> Path:
         """
         Get the path to the resources folder.
         """
         return os.path.join(self.bundlePath(), self._resourcesName)
 
-    def infoDictionaryPath(self):
+    def infoDictionaryPath(self) -> Path:
         """
         Get the path of the `info.plist` file.
         """
         return os.path.join(self.bundlePath(), self._infoName)
 
-    def licensePath(self):
+    def licensePath(self) -> Path:
         """
         Get the path of license file.
         """
         return os.path.join(self.bundlePath(), self._licenseName)
 
-    def requirementsPath(self):
+    def requirementsPath(self) -> Path:
         """
         Get the path of the requirements file.
         """
@@ -359,7 +404,9 @@ for pyFile in {pyFiles}:
                 self._infoDictCache = dict()
         return self._infoDictCache
 
-    infoDictionary = property(_get_infoDictionary, doc="Returns the `info.plist` as a dictionary.")
+    infoDictionary = property(
+        _get_infoDictionary, doc="Returns the `info.plist` as a dictionary."
+    )
 
     def setInfo(self, key, value):
         """
@@ -389,7 +436,11 @@ for pyFile in {pyFiles}:
     def _set_developer(self, value):
         self.infoDictionary["developer"] = value
 
-    developer = property(_get_developer, _set_developer, doc="Get and set the name of the extension developer.")
+    developer = property(
+        _get_developer,
+        _set_developer,
+        doc="Get and set the name of the extension developer.",
+    )
 
     def _get_developerURL(self):
         return self.infoDictionary.get("developerURL")
@@ -397,7 +448,9 @@ for pyFile in {pyFiles}:
     def _set_developerURL(self, value):
         self.infoDictionary["developerURL"] = value
 
-    developerURL = property(_get_developerURL, _set_developerURL, doc="Get and set the developer URL.")
+    developerURL = property(
+        _get_developerURL, _set_developerURL, doc="Get and set the developer URL."
+    )
 
     def getDeveloperNSURL(self):
         """
@@ -413,7 +466,9 @@ for pyFile in {pyFiles}:
     def _set_version(self, value):
         self.infoDictionary["version"] = value
 
-    version = property(_get_version, _set_version, doc="Get and set the extension version.")
+    version = property(
+        _get_version, _set_version, doc="Get and set the extension version."
+    )
 
     def _get_timeStamp(self):
         return self.infoDictionary.get("timeStamp")
@@ -421,7 +476,9 @@ for pyFile in {pyFiles}:
     def _set_timeStamp(self, value):
         self.infoDictionary["timeStamp"] = value
 
-    timeStamp = property(_get_timeStamp, _set_timeStamp, doc="Get and set the extension time stamp.")
+    timeStamp = property(
+        _get_timeStamp, _set_timeStamp, doc="Get and set the extension time stamp."
+    )
 
     def _get_requiresVersionMajor(self):
         return self.infoDictionary.get("requiresVersionMajor")
@@ -433,7 +490,11 @@ for pyFile in {pyFiles}:
         else:
             self.infoDictionary["requiresVersionMajor"] = value
 
-    requiresVersionMajor = property(_get_requiresVersionMajor, _set_requiresVersionMajor, doc="Get and set the minor required RoboFont version.")
+    requiresVersionMajor = property(
+        _get_requiresVersionMajor,
+        _set_requiresVersionMajor,
+        doc="Get and set the minor required RoboFont version.",
+    )
 
     def _get_requiresVersionMinor(self):
         return self.infoDictionary.get("requiresVersionMinor")
@@ -445,7 +506,11 @@ for pyFile in {pyFiles}:
         else:
             self.infoDictionary["requiresVersionMinor"] = value
 
-    requiresVersionMinor = property(_get_requiresVersionMinor, _set_requiresVersionMinor, doc="Get and set the major required RoboFont version.")
+    requiresVersionMinor = property(
+        _get_requiresVersionMinor,
+        _set_requiresVersionMinor,
+        doc="Get and set the major required RoboFont version.",
+    )
 
     def _get_addToMenu(self):
         return self.infoDictionary.get("addToMenu", [])
@@ -453,7 +518,11 @@ for pyFile in {pyFiles}:
     def _set_addToMenu(self, value):
         self.infoDictionary["addToMenu"] = value
 
-    addToMenu = property(_get_addToMenu, _set_addToMenu, doc="Get and set scripts to be added to the extension menu.")
+    addToMenu = property(
+        _get_addToMenu,
+        _set_addToMenu,
+        doc="Get and set scripts to be added to the extension menu.",
+    )
 
     def addScriptToMenu(self, path, preferredName, shortKey=""):
         """
@@ -479,7 +548,11 @@ for pyFile in {pyFiles}:
     def _set_launchAtStartUp(self, value):
         self.infoDictionary["launchAtStartUp"] = value
 
-    launchAtStartUp = property(_get_launchAtStartUp, _set_launchAtStartUp, doc="Get and set a script to be launched when RoboFont starts up.")
+    launchAtStartUp = property(
+        _get_launchAtStartUp,
+        _set_launchAtStartUp,
+        doc="Get and set a script to be launched when RoboFont starts up.",
+    )
 
     def _get_mainScript(self):
         return self.infoDictionary.get("mainScript")
@@ -487,7 +560,9 @@ for pyFile in {pyFiles}:
     def _set_mainScript(self, value):
         self.infoDictionary["mainScript"] = value
 
-    mainScript = property(_get_mainScript, _set_mainScript, doc="Get and set the main script.")
+    mainScript = property(
+        _get_mainScript, _set_mainScript, doc="Get and set the main script."
+    )
 
     def mainScriptPath(self):
         """
@@ -505,7 +580,11 @@ for pyFile in {pyFiles}:
         else:
             self.infoDictionary["uninstallScript"] = value
 
-    uninstallScript = property(_get_uninstallScript, _set_uninstallScript, doc="Get and set the uninstall script.")
+    uninstallScript = property(
+        _get_uninstallScript,
+        _set_uninstallScript,
+        doc="Get and set the uninstall script.",
+    )
 
     def uninstallScriptPath(self):
         """
@@ -519,7 +598,11 @@ for pyFile in {pyFiles}:
     def _set_html(self, value):
         self.infoDictionary["html"] = value
 
-    html = property(_get_html, _set_html, doc="Get and set a bool indicating if the extension has HTML help.")
+    html = property(
+        _get_html,
+        _set_html,
+        doc="Get and set a bool indicating if the extension has HTML help.",
+    )
 
     def hasHTML(self):
         """
@@ -545,7 +628,11 @@ for pyFile in {pyFiles}:
     def _set_documentationURL(self, value):
         self.infoDictionary["documentationURL"] = value
 
-    documentationURL = property(_get_documentationURL, _set_documentationURL, doc="An external link to the documentation.")
+    documentationURL = property(
+        _get_documentationURL,
+        _set_documentationURL,
+        doc="An external link to the documentation.",
+    )
 
     def getDocumentationNSURL(self):
         """
@@ -568,7 +655,11 @@ for pyFile in {pyFiles}:
     def _set_expireDate(self, value):
         self.infoDictionary["expireDate"] = value
 
-    expireDate = property(_get_expireDate, _set_expireDate, doc="Get and set the extension expiration date.")
+    expireDate = property(
+        _get_expireDate,
+        _set_expireDate,
+        doc="Get and set the extension expiration date.",
+    )
 
     expireDateFormat = "%Y-%m-%d"
 
@@ -589,7 +680,10 @@ for pyFile in {pyFiles}:
                 self._resourcesNamesMapCache[(name, ext)] = path
         return self._resourcesNamesMapCache
 
-    resourcesNamesMap = property(_get_resourcesNamesMap, doc="Get a dictionary mapping resources file names to paths.")
+    resourcesNamesMap = property(
+        _get_resourcesNamesMap,
+        doc="Get a dictionary mapping resources file names to paths.",
+    )
 
     def get(self, name, ext="*"):
         """
@@ -643,7 +737,9 @@ for pyFile in {pyFiles}:
     def _set_license(self, value):
         self._license = value
 
-    license = property(_get_license, _set_license, doc="Get and set the license for the extension.")
+    license = property(
+        _get_license, _set_license, doc="Get and set the license for the extension."
+    )
 
     # ================
     # = requirements =
@@ -659,7 +755,11 @@ for pyFile in {pyFiles}:
     def _set_requirements(self, txt):
         self._requirements = txt
 
-    requirements = property(_get_requirements, _set_requirements, doc="Get and set the requirements (dependencies) for the bundle.")
+    requirements = property(
+        _get_requirements,
+        _set_requirements,
+        doc="Get and set the requirements (dependencies) for the bundle.",
+    )
 
     @classmethod
     def _requirementCompareVersionMustBeEqual(self, v1, v2):
@@ -685,10 +785,18 @@ for pyFile in {pyFiles}:
             version = None
             if requirementMustMatch in requirementKey:
                 requirementKey, versionKey = requirementKey.split(requirementMustMatch)
-                version = self._requirementCompareVersionMustBeEqual, versionKey.strip(), line.strip()
+                version = (
+                    self._requirementCompareVersionMustBeEqual,
+                    versionKey.strip(),
+                    line.strip(),
+                )
             elif requirementMinVersion in requirementKey:
                 requirementKey, versionKey = requirementKey.split(requirementMinVersion)
-                version = self._requirementCompareVersionCompareEqualOrBigger, versionKey.strip(), line.strip()
+                version = (
+                    self._requirementCompareVersionCompareEqualOrBigger,
+                    versionKey.strip(),
+                    line.strip(),
+                )
 
             requirementKey = requirementKey.strip()
             if requirementKey in done:
@@ -738,7 +846,9 @@ for pyFile in {pyFiles}:
         """
         self._validationErrors = []
         if self.bundlePath() is None:
-            self._validationErrors.append("Extension bundle must be saved on disk before it can be validated.")
+            self._validationErrors.append(
+                "Extension bundle must be saved on disk before it can be validated."
+            )
         else:
             self.validateInfo()
             self.validateLib()
@@ -754,8 +864,9 @@ for pyFile in {pyFiles}:
         """
         return "\n".join(self._validationErrors)
 
-    def _validateDict(self, obj, requiredKeys, additionalKeys=dict(), endsWithDotPy=[], niceName=""):
-
+    def _validateDict(
+        self, obj, requiredKeys, additionalKeys=dict(), endsWithDotPy=[], niceName=""
+    ):
         def strifyTuple(v):
             if isinstance(valueType, tuple):
                 return ", ".join(["%s" % i.__name__ for i in v])
@@ -765,37 +876,52 @@ for pyFile in {pyFiles}:
         for requiredKey, valueType in requiredKeys.items():
             value = obj.get(requiredKey)
             if value is None:
-                self._validationErrors.append("%s is a required %s key" % (requiredKey, niceName))
+                self._validationErrors.append(
+                    "%s is a required %s key" % (requiredKey, niceName)
+                )
                 continue
 
             if not isinstance(value, valueType):
                 niceType = strifyTuple(valueType)
-                self._validationErrors.append("the value of %s is wrong (%s), should be %s." % (requiredKey, type(value).__name__, niceType))
+                self._validationErrors.append(
+                    "the value of %s is wrong (%s), should be %s."
+                    % (requiredKey, type(value).__name__, niceType)
+                )
                 continue
 
             if requiredKey in endsWithDotPy:
                 if not value.endswith(".py"):
-                    self._validationErrors.append("%s '%s' should be a relative path to a *.py file." % (requiredKey, value))
+                    self._validationErrors.append(
+                        "%s '%s' should be a relative path to a *.py file."
+                        % (requiredKey, value)
+                    )
 
         for additionalKey, valueType in additionalKeys.items():
             value = obj.get(additionalKey)
             if value is not None and not isinstance(value, valueType):
                 niceType = strifyTuple(valueType)
-                self._validationErrors.append("the value of %s is wrong (%s), should be %s." % (requiredKey, type(value).__name__, niceType))
+                self._validationErrors.append(
+                    "the value of %s is wrong (%s), should be %s."
+                    % (requiredKey, type(value).__name__, niceType)
+                )
 
     def validateInfo(self):
         """
         Validate the `info.plist` file.
         """
         if not os.path.exists(self.infoDictionaryPath()):
-            self._validationErrors.append("info.plist does not exist, this is required.")
+            self._validationErrors.append(
+                "info.plist does not exist, this is required."
+            )
             return
 
         try:
             with open(self.infoDictionaryPath(), "rb") as f:
                 info = plistlib.load(f)
         except Exception:
-            self._validationErrors.append("info.plist is not formatted as a *.plist file and unreadable.")
+            self._validationErrors.append(
+                "info.plist is not formatted as a *.plist file and unreadable."
+            )
             return
 
         requiredKeys = {
@@ -804,7 +930,7 @@ for pyFile in {pyFiles}:
             "developerURL": str,
             "name": str,
             "timeStamp": (float, int),
-            "version": str
+            "version": str,
         }
         additionalKeys = {
             "html": (bool, int),
@@ -813,32 +939,52 @@ for pyFile in {pyFiles}:
             "mainScript": str,
             "requiresVersionMajor": str,
             "requiresVersionMinor": str,
-            "uninstallScript": str
+            "uninstallScript": str,
         }
 
         endsWithDotPy = ["path"]
 
-        self._validateDict(info, requiredKeys, additionalKeys=additionalKeys, endsWithDotPy=endsWithDotPy, niceName="info.plist")
+        self._validateDict(
+            info,
+            requiredKeys,
+            additionalKeys=additionalKeys,
+            endsWithDotPy=endsWithDotPy,
+            niceName="info.plist",
+        )
 
         if self.launchAtStartUp:
             mainScript = self.mainScript
             if mainScript is None:
-                self._validationErrors.append("mainscript can not be None when a script is required on start up.")
+                self._validationErrors.append(
+                    "mainscript can not be None when a script is required on start up."
+                )
             else:
                 if not mainScript.endswith(".py"):
-                    self._validationErrors.append("mainScript '%s' should be a relative path to a *.py file." % (mainScript))
+                    self._validationErrors.append(
+                        "mainScript '%s' should be a relative path to a *.py file."
+                        % (mainScript)
+                    )
 
                 mainScriptPath = self.mainScriptPath()
                 if not os.path.exists(mainScriptPath):
-                    self._validationErrors.append("mainScript '%s' does not exists in '%s/%s'." % (mainScript, self.fileName(), self._libName))
+                    self._validationErrors.append(
+                        "mainScript '%s' does not exists in '%s/%s'."
+                        % (mainScript, self.fileName(), self._libName)
+                    )
 
         uninstallScript = self.uninstallScript
         if uninstallScript:
             if not uninstallScript.endswith(".py"):
-                self._validationErrors.append("uninstallScript '%s' should be a relative path to a *.py file." % (uninstallScript))
+                self._validationErrors.append(
+                    "uninstallScript '%s' should be a relative path to a *.py file."
+                    % (uninstallScript)
+                )
             uninstallScriptPath = self.uninstallScriptPath()
             if not os.path.exists(uninstallScriptPath):
-                self._validationErrors.append("uninstallScript '%s' does not exists in '%s/%s'." % (uninstallScript, self.fileName(), self._libName))
+                self._validationErrors.append(
+                    "uninstallScript '%s' does not exists in '%s/%s'."
+                    % (uninstallScript, self.fileName(), self._libName)
+                )
 
         addToMenu = self.addToMenu
         requiredMenuKeys = {
@@ -846,38 +992,54 @@ for pyFile in {pyFiles}:
             "preferredName": str,
             "shortKey": (str, tuple, list),
         }
-        additionalKeys = {
-            "nestInSubmenus": (bool, int)
-        }
+        additionalKeys = {"nestInSubmenus": (bool, int)}
 
         for menuItem in addToMenu:
-            self._validateDict(menuItem, requiredMenuKeys, additionalKeys=additionalKeys, endsWithDotPy=endsWithDotPy, niceName="addToMenu item")
+            self._validateDict(
+                menuItem,
+                requiredMenuKeys,
+                additionalKeys=additionalKeys,
+                endsWithDotPy=endsWithDotPy,
+                niceName="addToMenu item",
+            )
             shortKey = menuItem.get("shortKey")
             if shortKey is not None:
                 if isinstance(shortKey, (tuple, list)):
                     modifier, shortKey = shortKey
                     if not isinstance(modifier, int):
-                        self._validationErrors.append("Shortkey is formatted wrongly, modifier must a be an int '(modifier, character)'.")
+                        self._validationErrors.append(
+                            "Shortkey is formatted wrongly, modifier must a be an int '(modifier, character)'."
+                        )
                     if not isinstance(shortKey, str):
-                        self._validationErrors.append("Shortkey is formatted wrongly, character must a be a str '(modifier, character)'")
+                        self._validationErrors.append(
+                            "Shortkey is formatted wrongly, character must a be a str '(modifier, character)'"
+                        )
             menuItemPathString = menuItem.get("path")
             if menuItemPathString is not None:
                 menuItemPath = os.path.join(self.libPath(), menuItemPathString)
                 if not os.path.exists(menuItemPath):
-                    self._validationErrors.append("path key in menu item does not exist (%s), this is required." % menuItemPath)
+                    self._validationErrors.append(
+                        "path key in menu item does not exist (%s), this is required."
+                        % menuItemPath
+                    )
 
         if self.expireDate:
             try:
                 datetime.datetime.strptime(self.expireDate, self.expireDateFormat)
             except Exception:
-                self._validationErrors.append("expire date is not set in the correct format: 'YYYY-MM-DD'. ")
+                self._validationErrors.append(
+                    "expire date is not set in the correct format: 'YYYY-MM-DD'. "
+                )
 
     def validateLib(self):
         """
         Validate the lib where all Python files are stored.
         """
         if not os.path.exists(self.libPath()):
-            self._validationErrors.append("'%s' does not exist in '%s', this is required." % (self._libName, self.fileName()))
+            self._validationErrors.append(
+                "'%s' does not exist in '%s', this is required."
+                % (self._libName, self.fileName())
+            )
             return
 
     def validateHTML(self):
@@ -888,11 +1050,17 @@ for pyFile in {pyFiles}:
             return
 
         if not os.path.exists(self.HTMLPath()):
-            self._validationErrors.append("'%s' does not exist in '%s', this is required." % (self._HTMLName, self.fileName()))
+            self._validationErrors.append(
+                "'%s' does not exist in '%s', this is required."
+                % (self._HTMLName, self.fileName())
+            )
             return
 
         if not os.path.exists(self.HTMLIndexPath()):
-            self._validationErrors.append("'%s' does not exist in '%s', this is required." % (self._indexHTMLName, self._HTMLName))
+            self._validationErrors.append(
+                "'%s' does not exist in '%s', this is required."
+                % (self._indexHTMLName, self._HTMLName)
+            )
             return
 
     def validateResources(self):
@@ -917,7 +1085,7 @@ for pyFile in {pyFiles}:
     # = hash =
     # ========
 
-    def extensionHash(self, passphrase=""):
+    def extensionHash(self, passphrase="") -> str:
         path = self.bundlePath()
         digest = hashlib.sha1()
         # add private key
@@ -933,9 +1101,9 @@ for pyFile in {pyFiles}:
                 filePath = os.path.join(root, name)
                 pathToDigest.append(filePath)
         for filePath in sorted(pathToDigest):
-            digest.update(hashlib.sha1(filePath[len(path):].encode()).digest())
+            digest.update(hashlib.sha1(filePath[len(path) :].encode()).digest())
             if os.path.isfile(filePath):
-                with open(filePath, 'rb') as f:
+                with open(filePath, "rb") as f:
                     while True:
                         buf = f.read(1024 * 1024)
                         if not buf:
@@ -975,12 +1143,15 @@ for pyFile in {pyFiles}:
 
         for path in walkDirectoryForFile(self.HTMLPath(), ext=".md"):
             with open(path, "r", encoding="utf-8") as f:
-                htmlData = markdown.markdown(f.read(), extensions=[
-                    markdownTableExtension(),
-                    markdownTocExtension(permalink=False, toc_depth='2-3'),
-                    markdownFencedCodeExtension(),
-                    markdownCodeHiliteExtension()
-                ])
+                htmlData = markdown.markdown(
+                    f.read(),
+                    extensions=[
+                        markdownTableExtension(),
+                        markdownTocExtension(permalink=False, toc_depth="2-3"),
+                        markdownFencedCodeExtension(),
+                        markdownCodeHiliteExtension(),
+                    ],
+                )
                 destPath = path[:-3] + ".html"
 
                 html = htmlTemplate % (styleData, htmlData)
@@ -1000,7 +1171,9 @@ for pyFile in {pyFiles}:
             return []
         items = os.listdir(applicationPluginRootPath)
         items.sort(key=str.casefold)
-        return [item for item in items if item.lower().endswith(cls.fileExtension.lower())]
+        return [
+            item for item in items if item.lower().endswith(cls.fileExtension.lower())
+        ]
 
     @classmethod
     def setAllExtensions(cls, value):
@@ -1038,7 +1211,9 @@ for pyFile in {pyFiles}:
         if bundle.launchAtStartUp and os.path.exists(bundle.mainScriptPath()):
             # resolve requirements
             bundle.loadRequirements(done)
-            bundle._executeScript(bundle.mainScriptPath(), "Installing", bundle.name, bundle.libPath())
+            bundle._executeScript(
+                bundle.mainScriptPath(), "Installing", bundle.name, bundle.libPath()
+            )
 
     @classmethod
     def buildExtensionMenu(cls, menu):
@@ -1057,20 +1232,30 @@ for pyFile in {pyFiles}:
                 continue
             if bundle.addToMenu:
                 if len(bundle.addToMenu) == 1 and not bundle.hasDocumentation():
-                    pluginMenuItem = cls._getMenuItemForBundleAction(bundle, bundle.addToMenu[0], menu)
+                    pluginMenuItem = cls._getMenuItemForBundleAction(
+                        bundle, bundle.addToMenu[0], menu
+                    )
                 else:
                     pluginMenu = NSMenu.alloc().initWithTitle_(bundle.name)
 
                     for infoMenu in bundle.addToMenu:
-                        item = cls._getMenuItemForBundleAction(bundle, infoMenu, pluginMenu)
+                        item = cls._getMenuItemForBundleAction(
+                            bundle, infoMenu, pluginMenu
+                        )
 
                     if bundle.hasDocumentation():
                         pluginMenu.addItem_(NSMenuItem.separatorItem())
-                        item = NSMenuItem.alloc().initWithTitle_action_keyEquivalent_("Help", "helpPlugin:", "")
+                        item = NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(
+                            "Help", "helpPlugin:", ""
+                        )
                         item.setRepresentedObject_(extensionName)
                         pluginMenu.addItem_(item)
 
-                    pluginMenuItem = NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(bundle.name, None, "")
+                    pluginMenuItem = (
+                        NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(
+                            bundle.name, None, ""
+                        )
+                    )
                     pluginMenuItem.setSubmenu_(pluginMenu)
                     menu.addItem_(pluginMenuItem)
 
@@ -1088,7 +1273,9 @@ for pyFile in {pyFiles}:
             for level in levels[:-1]:
                 item = currentMenu.itemWithTitle_(level)
                 if item is None:
-                    item = NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(level, "", "")
+                    item = NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(
+                        level, "", ""
+                    )
                     currentMenu.addItem_(item)
                     currentMenu = NSMenu.alloc().initWithTitle_(level)
                     item.setSubmenu_(currentMenu)
@@ -1101,7 +1288,10 @@ for pyFile in {pyFiles}:
             modifier = NSCommandKeyMask | NSControlKeyMask
 
         if (modifier, shortKey) in allShortKeys:
-            warnings.warn(f"Extension '{bundle.name}' short cut is not available: {shortKey} - {modifier}.", UserWarning)
+            warnings.warn(
+                f"Extension '{bundle.name}' short cut is not available: {shortKey} - {modifier}.",
+                UserWarning,
+            )
             shortKey = ""
             modifier = None
 
@@ -1110,7 +1300,9 @@ for pyFile in {pyFiles}:
 
         script = dict(fileName=scriptFileName, path=scriptPath)
 
-        item = NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(preferredName, "executeScript:", shortKey)
+        item = NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(
+            preferredName, "executeScript:", shortKey
+        )
         if modifier:
             item.setKeyEquivalentModifierMask_(modifier)
         item.setRepresentedObject_(script)
@@ -1159,11 +1351,18 @@ for pyFile in {pyFiles}:
         installPath = os.path.join(applicationPluginRootPath, self.fileName())
 
         if installPath == self.bundlePath():
-            return False, "Cannot install the same extension from the same destination. (%s)" % self.fileName()
+            return (
+                False,
+                "Cannot install the same extension from the same destination. (%s)"
+                % self.fileName(),
+            )
 
         if os.path.exists(installPath):
             if showMessages:
-                value = askReinstallDeinstall("Extension '%s' already installed." % self.fileName(), "Do you want to reinstall or uninstall the extension?")
+                value = askReinstallDeinstall(
+                    "Extension '%s' already installed." % self.fileName(),
+                    "Do you want to reinstall or uninstall the extension?",
+                )
             else:
                 value = 0
 
@@ -1177,17 +1376,36 @@ for pyFile in {pyFiles}:
                 return True, "Extension '%s' is uninstalled" % self.fileName()
             else:  # cancel
                 self.updatePreferenceWindow()
-                return True, ""  # "Installation of '%s' was cancelled." % self.fileName()
+                return (
+                    True,
+                    "",
+                )  # "Installation of '%s' was cancelled." % self.fileName()
 
-        if self.requiresVersionMajor is not None and self.requiresVersionMinor is not None:
-            requiredVersion = "%s.%s" % (self.requiresVersionMajor, self.requiresVersionMinor)
-            appVersion = NSBundle.mainBundle().infoDictionary()["CFBundleShortVersionString"]
+        if (
+            self.requiresVersionMajor is not None
+            and self.requiresVersionMinor is not None
+        ):
+            requiredVersion = "%s.%s" % (
+                self.requiresVersionMajor,
+                self.requiresVersionMinor,
+            )
+            appVersion = NSBundle.mainBundle().infoDictionary()[
+                "CFBundleShortVersionString"
+            ]
             if version.Version(appVersion) < version.Version(requiredVersion):
-                return False, "Extension '%s' requires %s %s" % (self.fileName(), appName, requiredVersion)
+                return False, "Extension '%s' requires %s %s" % (
+                    self.fileName(),
+                    appName,
+                    requiredVersion,
+                )
 
         resolvedRequirements = self.resolveRequirements()
         if resolvedRequirements:
-            return False, "Extension %s requires other extensions to be installed: '%s'\n\nInstall those extensions first." % (self.fileName(), ", ".join(sorted(resolvedRequirements)))
+            return (
+                False,
+                "Extension %s requires other extensions to be installed: '%s'\n\nInstall those extensions first."
+                % (self.fileName(), ", ".join(sorted(resolvedRequirements))),
+            )
 
         fm = NSFileManager.defaultManager()
         fm.copyItemAtPath_toPath_error_(self.bundlePath(), installPath, None)
@@ -1197,7 +1415,9 @@ for pyFile in {pyFiles}:
             self.updateScriptingMenu()
 
         if self.launchAtStartUp:
-            self._executeScript(self.mainScriptPath(), "Installing", self.name, self.libPath())
+            self._executeScript(
+                self.mainScriptPath(), "Installing", self.name, self.libPath()
+            )
 
         self.updatePreferenceWindow()
         return True, "Done installing '%s' (version %s)." % (self.name, self.version)
@@ -1235,8 +1455,12 @@ for pyFile in {pyFiles}:
     def _deinstall(self, update=True):
         if self.uninstallScript is not None:
             uninstallScriptPath = self.uninstallScriptPath()
-            if os.path.exists(uninstallScriptPath) and uninstallScriptPath.endswith(".py"):
-                self._executeScript(uninstallScriptPath, "Deinstalling", self.name, self.libPath())
+            if os.path.exists(uninstallScriptPath) and uninstallScriptPath.endswith(
+                ".py"
+            ):
+                self._executeScript(
+                    uninstallScriptPath, "Deinstalling", self.name, self.libPath()
+                )
 
         if os.path.exists(self.bundlePath()):
             shutil.rmtree(self.bundlePath())
