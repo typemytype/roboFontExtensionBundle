@@ -42,6 +42,31 @@ from typing_extensions import Self
 from .extensionTools import PluginHelpWindow, askReinstallDeinstall
 from .scriptTools import Output, ScriptRunner
 
+"""
+Agenda:
+- namespace --> put everything into Lib/robofontExtensionBundle.py
+- ok for converting to pathlib
+- separate public from private in two separate modules
+- expireDate should be a RF specific thing
+- move test_extensionBundle into here from RF app, based on a dummy.roboFontExtension
+- rf-extension-boilerplate
+    - remove extension from git
+    - build.py should be github action
+    - built extension should go into releases
+- we need a command line interface once it's pip installed, github action should use it
+    $ roboFontExtension ... (validation or building)
+
+Notes:
+- public bundle should validate an existing bundle and create new ones from scratch
+- robofont should subclass the public object to do all the specific operations for the app
+- public bundle could validate the .py syntax
+- pure python package, should run on linux machine
+- switch to plist pip package instead of a NSDictionary
+- the public one should only support a full path to load an existing bundle
+- there's a public extension from Gustavo that I can use to test
+- pycOnly should be gone, the flag can be there with a warning but the code should be gone
+
+"""
 
 @dataclass
 class ExtensionBundle:
@@ -88,7 +113,9 @@ class ExtensionBundle:
     ```
     """
 
+    # just the name of the extension
     name: Union[str, None] = None
+    # path has higher priority than a name
     path: Union[Path, None] = None
     libName: str = "lib"
     htmlName: str ="html"
@@ -115,14 +142,10 @@ class ExtensionBundle:
 
         self._validationErrors = []
 
+        # TODO RF specific
+        # maybe the load bundle method should take care of it
         # load the path or name
-        if self.name is not None and self.path is None:
-            if not self.name.lower().endswith(self.fileExtension.lower()):
-                self.name += self.fileExtension
-            path = os.path.join(applicationPluginRootPath, self.name)
-
-        if self.path is not None:
-            path = os.path.realpath(path)
+        
         self._bundlePath = path
 
         if path is not None:
@@ -133,6 +156,17 @@ class ExtensionBundle:
             currentPythonLibPath = os.path.join(path, currentPythonLibName)
             if os.path.exists(currentPythonLibPath):
                 self._libName = currentPythonLibName
+
+    @classmethod
+    def readBundle(cls, name=None, path=None):
+        if name is not None and path is None:
+            if not name.lower().endswith(cls.fileExtension.lower()):
+                name += cls.fileExtension
+            path = os.path.join(applicationPluginRootPath, name)
+
+        if path is not None:
+            path = os.path.realpath(path)
+        return cls(path=path)
 
     @classmethod
     def currentBundle(cls, filePath=None) -> Self:
