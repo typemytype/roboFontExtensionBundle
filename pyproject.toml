@@ -1,18 +1,20 @@
-[tool.poetry]
-name = "extension_bundle"
-version = "0.1.0"
-description = ""
-authors = ["Roberto Arista <arista.rob@gmail.com>"]
+[build-system]
+requires = ["setuptools >= 61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "robofontExtensionBundle"
+dynamic = ["version"]
+
+requires-python = "<= 3.9.13"
+authors = [
+  {name = "Frederik Berlaen", email = "frederik@typemytype.com"},
+  {name = "Roberto Arista", email = "arista.rob@gmail.com"},
+]
 readme = "README.md"
 
-[tool.poetry.dependencies]
-python = "3.9.13"
-markdown = "^3.5.1"
-pyobjc = "^10.1"
-typing-extensions = "^4.9.0"
-packaging = "^23.2"
-
-
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+dependencies = [
+  "markdown",
+  "typing-extensions",
+  "packaging",
+]
