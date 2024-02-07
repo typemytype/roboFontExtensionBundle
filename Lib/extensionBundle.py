@@ -12,7 +12,6 @@ from pathlib import Path
 from typing import Union
 
 import markdown
-
 from markdown.extensions.codehilite import \
     CodeHiliteExtension as markdownCodeHiliteExtension
 from markdown.extensions.fenced_code import \
@@ -21,7 +20,6 @@ from markdown.extensions.tables import TableExtension as markdownTableExtension
 from markdown.extensions.toc import TocExtension as markdownTocExtension
 from packaging import version
 from typing_extensions import Self
-
 
 """
 Agenda:
@@ -35,7 +33,7 @@ Agenda:
     - built extension should go into releases
 - we need a command line interface once it's pip installed, github action should use it
     $ roboFontExtension ... (validation or building)
-    
+
 Notes:
 - public bundle should validate an existing bundle and create new ones from scratch
 - robofont should subclass the public object to do all the specific operations for the app
@@ -45,6 +43,9 @@ Notes:
 - the public one should only support a full path to load an existing bundle
 - there's a public extension from Gustavo that I can use to test
 - pycOnly should be gone, the flag can be there with a warning but the code should be gone
+
+10/01/2024
+- all the icon stuff can go to RF subclass
 
 """
 
