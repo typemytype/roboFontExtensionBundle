@@ -18,3 +18,8 @@ dependencies = [
   "typing-extensions",
   "packaging",
 ]
+
+[project.optional-dependencies]
+dev = [
+  "pytest",
+]
