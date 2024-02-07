@@ -3,5 +3,10 @@
     "editor.formatOnSave": true,
     "black-formatter.args": [
         "--line-length 120"
-    ]
+    ],
+    "python.testing.pytestArgs": [
+        "tests"
+    ],
+    "python.testing.unittestEnabled": false,
+    "python.testing.pytestEnabled": true
 }
