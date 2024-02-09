@@ -1,5 +1,6 @@
 import ast
 import dataclasses
+import hashlib
 import plistlib
 import tempfile
 import time
@@ -214,6 +215,42 @@ class ExtensionBundle:
 
         copytree(tempDir, destPath)
         rmtree(tempDir)
+
+        if self.expireDate:
+            # write a .hash file if expireDate key is present
+            hashPath = self.bundlePath / ".hash"
+            hashData = self.extensionHash("roboFont.extension.hash")
+            with open(hashPath, "w") as f:
+                f.write(hashData)
+        return self.validate()
+
+    def extensionHash(self, passphrase="") -> str:
+        from os import walk
+
+        digest = hashlib.sha1()
+        # add private key
+        digest.update(passphrase.encode("utf-8"))
+        pathToDigest: list[Path] = []
+        for root, dirs, files in walk(self.bundlePath):
+            for name in files:
+                # ignore
+                if name in [f"Icon{chr(0x0D)}", ".hash"]:
+                    continue
+                elif name.endswith(".DS_Store"):
+                    continue
+                filePath = Path(root) / name
+                pathToDigest.append(filePath)
+        for filePath in sorted(pathToDigest):
+            digest.update(hashlib.sha1(filePath.name.encode()).digest())
+            if filePath.is_file():
+                with open(filePath, "rb") as f:
+                    while True:
+                        buf = f.read(1024 * 1024)
+                        if not buf:
+                            break
+                        digest.update(buf)
+        return digest.hexdigest()
+
 
     # ========
     # = docs =
