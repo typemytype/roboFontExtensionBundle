@@ -26,6 +26,7 @@ Questions:
     - if that's the case we need to validate a few more, like the name
 - should the developerURL be mandatory and empty, or optional?
 - what's the purpose of loadRequirements?
+- check test_hash() together, wanna understand better the aim
 
 """
 
@@ -119,6 +120,10 @@ class ExtensionBundle:
         return self.bundlePath / "html"
     
     @property
+    def hashPath(self) -> Path:
+        return self.bundlePath / ".hash"
+    
+    @property
     def resourcesFolder(self) -> Path:
         return self.bundlePath / "resources"
     
@@ -178,7 +183,7 @@ class ExtensionBundle:
             version = plist["version"],
             addToMenu = [AddToMenuDict(i) for i in plist.get("addToMenu", [])],
             html = plist["html"],
-            hash=hashPath.read_text(),
+            hash=hashPath.read_text() if hashPath.exists() else "",
             documentationURL = plist.get("documentationURL"),
             uninstallScript = plist.get("uninstallScript"),
             timeStamp = plist.get("timeStamp"),
@@ -227,9 +232,8 @@ class ExtensionBundle:
 
         if self.expireDate:
             # write a .hash file if expireDate key is present
-            hashPath = self.bundlePath / ".hash"
             hashData = self.extensionHash("roboFont.extension.hash")
-            with open(hashPath, "w") as f:
+            with open(self.hashPath, "w") as f:
                 f.write(hashData)
         return self.validate()
 
@@ -243,7 +247,7 @@ class ExtensionBundle:
         for root, dirs, files in walk(self.bundlePath):
             for name in files:
                 # ignore
-                if name in [f"Icon{chr(0x0D)}", ".hash"]:
+                if name in [f"Icon{chr(0x0D)}", self.hashPath.name]:
                     continue
                 elif name.endswith(".DS_Store"):
                     continue
