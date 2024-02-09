@@ -23,10 +23,6 @@ from typing_extensions import Self
 
 """
 Agenda:
-- ok for converting to pathlib
-- separate public from private in two separate modules
-- expireDate should be a RF specific thing
-- move test_extensionBundle into here from RF app, based on a dummy.roboFontExtension
 - rf-extension-boilerplate
     - remove extension from git
     - build.py should be github action
@@ -37,15 +33,20 @@ Agenda:
 Notes:
 - public bundle should validate an existing bundle and create new ones from scratch
 - robofont should subclass the public object to do all the specific operations for the app
-- public bundle could validate the .py syntax
-- pure python package, should run on linux machine
-- switch to plist pip package instead of a NSDictionary
 - the public one should only support a full path to load an existing bundle
-- there's a public extension from Gustavo that I can use to test
 - pycOnly should be gone, the flag can be there with a warning but the code should be gone
 
 10/01/2024
 - all the icon stuff can go to RF subclass
+
+Completed:
+- separate public from private in two separate modules
+- expireDate should be a RF specific thing
+- move test_extensionBundle into here from RF app, based on a dummy.roboFontExtension
+- public bundle could validate the .py syntax
+- pure python package, should run on linux machine
+- switch to plist pip package instead of a NSDictionary
+- there's a public extension from Gustavo that I can use to test
 
 """
 
