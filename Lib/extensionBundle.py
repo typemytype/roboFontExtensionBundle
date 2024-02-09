@@ -1,10 +1,12 @@
+import ast
+import dataclasses
 import plistlib
 import tempfile
 import time
-from dataclasses import dataclass, field
+from datetime import datetime
 from pathlib import Path
 from shutil import copytree, rmtree
-from typing import TypedDict, Union
+from urllib.parse import urlparse
 
 import markdown
 from markdown.extensions.codehilite import \
@@ -13,50 +15,69 @@ from markdown.extensions.fenced_code import \
     FencedCodeExtension as markdownFencedCodeExtension
 from markdown.extensions.tables import TableExtension as markdownTableExtension
 from markdown.extensions.toc import TocExtension as markdownTocExtension
-from typing_extensions import Self
+from pydantic.dataclasses import dataclass
+from typing_extensions import (Any, NotRequired, Optional, Self, TypedDict,
+                               Union)
 
-OptionalStr = Union[str, None]
-OptionalPath = Union[Path, None]
+"""
+Questions:
+- should we be able to initiate the extensionBundle with no arguments?
+    - if that's the case we need to validate a few more, like the name
+- should the developerURL be mandatory and empty, or optional?
+- what's the purpose of loadRequirements?
+
+"""
+
+def isValid(url: str) -> bool:
+    # from https://stackoverflow.com/a/38020041/1925198
+    try:
+        result = urlparse(url)
+        return all([result.scheme, result.netloc])
+    except:
+        return False
 
 
 class AddToMenuDict(TypedDict):
     path: str
     preferredName: str
     shortKey: Union[str, tuple[str, ...]]
-    nestInSubmenus: Union[bool, None]        # v2
+    nestInSubmenus: NotRequired[Union[bool, int]]        # v2
+
 
 @dataclass
 class ExtensionBundle:
 
-    name: str
-    developer: str
-    developerURL: str
-    launchAtStartUp: bool
-    mainScript: str
-    version: str
-    addToMenu: list[AddToMenuDict] = field(default_factory=list)
+    name: str = ""
+    developer: str = ""
+    developerURL: str = "" # FIXME mandatory?
+    launchAtStartUp: bool = False
+    mainScript: str = ""
+    version: str = ""
+    addToMenu: list[AddToMenuDict] = dataclasses.field(default_factory=list)
 
-    path: OptionalPath = None
-    # TODO do we need this? couldn't we just check the libFolder existance?
-    html: bool = False
-    documentationURL: OptionalStr = None            # if provided it must start with 'http(s)://' v4
-    uninstallScript: OptionalStr = None             # v2
-    # TODO do we need this, or we just write it in output?
-    timeStamp: Union[float, None] = None
+    path: Optional[Path] = None
+    html: bool = False                                # to be deprecated, DOCS
+    documentationURL: Optional[str] = None            # if provided it must start with 'http(s)://' v4
+    uninstallScript: Optional[str] = None             # v2
 
-    # TODO ints or strs?
-    requiresVersionMajor: Union[int, None] = None
-    requiresVersionMinor: Union[int, None] = None
+    timeStamp: Optional[float] = None
+    hash: str = ""
 
-    # TODO should we remove it?
-    expireDate: OptionalStr = None                  # if set use the format YYYY-MM-DD
+    requiresVersionMajor: Optional[str] = None
+    requiresVersionMinor: Optional[str] = None
+
+    expireDate: Optional[str] = None                  # if set use the format YYYY-MM-DD
     license: str = ""
     requirements: str = ""
-
 
     # Constants
     indexHTMLName = "index.html"
     fileExtension = ".roboFontExt"
+    expireDateFormat = "%Y-%m-%d"
+    infoPlistFilename = "info.plist"
+
+    # Private
+    _validationErrors: list[str] = dataclasses.field(default_factory=list)
 
     def __repr__(self) -> str:
         name = "None" if not self.bundlePath else self.bundlePath.name
@@ -90,63 +111,22 @@ class ExtensionBundle:
     @property
     def resourcesFolder(self) -> Path:
         return self.bundlePath / "resources"
+    
+    @property
+    def infoPlistPath(self) -> Path:
+        return self.bundlePath / "info.plist"
+    
+    @property
+    def hasHTML(self) -> bool:
+        return (self.htmlFolder / self.indexHTMLName).exists()
 
-    # ================
-    # = classmethods =
-    # ================
-    @classmethod
-    def load(cls, bundlePath: Path) -> Self:
-        """
-        From an existing bundle
+    @property
+    def hasDocumentation(self) -> bool:
+        return (self.htmlFolder / self.indexHTMLName).exists() or bool(self.documentationURL)
 
-        """
-        plist = plistlib.loads((bundlePath / "info.plist").read_bytes())
-
-        licensePath = bundlePath / "license"
-        requirementsPath = bundlePath / "requirements"
-
-        return cls(
-            name = plist["name"],
-            path = bundlePath,
-            developer = plist["developer"],
-            developerURL = plist["developerURL"],
-            launchAtStartUp = plist["launchAtStartUp"],
-            mainScript = plist["mainScript"],
-            version = plist["version"],
-            addToMenu = [AddToMenuDict(i) for i in plist.get("addToMenu", [])],
-            html = plist["html"],
-            documentationURL = plist.get("documentationURL"),
-            uninstallScript = plist.get("uninstallScript"),
-            timeStamp = plist.get("timeStamp"), # TODO do we need to read this?
-            requiresVersionMajor = plist.get("requiresVersionMajor"),
-            requiresVersionMinor = plist.get("requiresVersionMinor"),
-            expireDate = plist.get("expireDate"),
-            license = licensePath.read_text() if licensePath.exists() else "",
-            requirements = requirementsPath.read_text() if requirementsPath.exists() else "",
-        )
-
-    def save(self, destPath: Path, libFolder: OptionalPath = None, htmlFolder: OptionalPath = None, resourcesFolder: OptionalPath = None):
-        """
-        Save the bundle to disk
-
-        """
-
-        assert destPath.suffix == self.fileExtension
-        assert destPath != self.bundlePath
-
-        self.timeStamp = time.time()
-        tempDir = Path(tempfile.mkdtemp())
-
-        copytree(libFolder or self.libFolder, tempDir / self.libFolder.name)
-        
-        if (htmlFolder and htmlFolder.exists()) or self.htmlFolder.exists():
-            copytree(htmlFolder or self.htmlFolder, tempDir / self.htmlFolder.name)
-            self.convertMarkdown(tempDir / self.htmlFolder.name)
-        
-        if (resourcesFolder and resourcesFolder.exists()) or self.resourcesFolder.exists():
-            copytree(resourcesFolder or self.resourcesFolder, tempDir / self.resourcesFolder.name)
-
-        plist = dict(
+    @property
+    def infoDictionary(self) -> dict[str, Any]:
+        return dict(
             name=self.name,
             developer=self.developer,
             developerURL=self.developerURL,
@@ -162,6 +142,65 @@ class ExtensionBundle:
             requiresVersionMinor=self.requiresVersionMinor,
             expireDate=self.expireDate,
         )
+
+    # ================
+    # = classmethods =
+    # ================
+    @classmethod
+    def load(cls, bundlePath: Path) -> Self:
+        """
+        From an existing bundle
+
+        """
+        plist = plistlib.loads((bundlePath / cls.infoPlistFilename).read_bytes())
+
+        licensePath = bundlePath / "license"
+        requirementsPath = bundlePath / "requirements"
+        hashPath = bundlePath / ".hash"
+
+        return cls(
+            name = plist["name"],
+            path = bundlePath,
+            developer = plist["developer"],
+            developerURL = plist["developerURL"],
+            launchAtStartUp = plist["launchAtStartUp"],
+            mainScript = plist["mainScript"],
+            version = plist["version"],
+            addToMenu = [AddToMenuDict(i) for i in plist.get("addToMenu", [])],
+            html = plist["html"],
+            hash=hashPath.read_text(),
+            documentationURL = plist.get("documentationURL"),
+            uninstallScript = plist.get("uninstallScript"),
+            timeStamp = plist.get("timeStamp"),
+            requiresVersionMajor = plist.get("requiresVersionMajor"),
+            requiresVersionMinor = plist.get("requiresVersionMinor"),
+            expireDate = plist.get("expireDate"),
+            license = licensePath.read_text() if licensePath.exists() else "",
+            requirements = requirementsPath.read_text() if requirementsPath.exists() else "",
+        )
+
+    def save(self, destPath: Path, libFolder: Optional[Path] = None, htmlFolder: Optional[Path] = None, resourcesFolder: Optional[Path] = None):
+        """
+        Save the bundle to disk
+
+        """
+        assert self.hash == "", "Cannot save this extension"
+        assert destPath.suffix == self.fileExtension, "Wrong file extension"
+        assert destPath != self.bundlePath, "You cannot override the same file"
+
+        self.timeStamp = time.time()
+        tempDir = Path(tempfile.mkdtemp())
+
+        copytree(libFolder or self.libFolder, tempDir / self.libFolder.name)
+        
+        if (htmlFolder and htmlFolder.exists()) or self.htmlFolder.exists():
+            copytree(htmlFolder or self.htmlFolder, tempDir / self.htmlFolder.name)
+            self.convertMarkdown(tempDir / self.htmlFolder.name)
+        
+        if (resourcesFolder and resourcesFolder.exists()) or self.resourcesFolder.exists():
+            copytree(resourcesFolder or self.resourcesFolder, tempDir / self.resourcesFolder.name)
+
+        plist = self.infoDictionary
         (tempDir / "info.plist").write_bytes(plistlib.dumps({k: v for k, v in plist.items() if v}))
 
         if self.license:
@@ -175,7 +214,6 @@ class ExtensionBundle:
 
         copytree(tempDir, destPath)
         rmtree(tempDir)
-
 
     # ========
     # = docs =
@@ -299,3 +337,69 @@ class ExtensionBundle:
             bundle = self.__class__(requirement)
             self._loadBundle(bundle, done)
             done.append(bundle.bundlePath.name)
+
+    def validate(self):
+
+        if not self.bundlePath.exists():
+            msg = "Extension bundle must be saved on disk before it can be validated."
+            self._validationErrors.append(msg)
+
+        if self.bundlePath.suffix != self.fileExtension:
+            msg = f"Extension bundle must be saved with {self.fileExtension} suffix."
+            self._validationErrors.append(msg)
+
+        if not self.infoPlistPath.exists():
+            msg = "info.plist does not exist, this is required."
+            self._validationErrors.append(msg)
+            return
+
+        try:
+            plistlib.loads(self.infoPlistPath.read_bytes())
+        except Exception:
+            msg = "info.plist is not formatted as a *.plist file and unreadable."
+            self._validationErrors.append(msg)
+            return
+
+        if not self.libFolder.exists():
+            msg = "Lib folder does not exist, this is required."
+            self._validationErrors.append(msg)
+
+        if not (self.libFolder / self.mainScript).exists():
+            msg = "Main .py script does not exist, this is required."
+            self._validationErrors.append(msg)
+
+        if uninstallScript := self.uninstallScript:
+            if not (self.libFolder / uninstallScript).exists():
+                msg = "Uninstall script does not exist, since it is defined, it is required"
+                self._validationErrors.append(msg)
+
+        for pyPath in self.libFolder.glob("**/*.py"):
+            try:
+                compile(pyPath.read_text(), "tool.py", 'exec', ast.PyCF_ONLY_AST)
+            except SyntaxError as error:
+                self._validationErrors.append(error.msg)
+
+        if url := self.documentationURL:
+            if not isValid(url):
+                msg = "Documentation URL is not valid"
+                self._validationErrors.append(msg)
+        
+        if url := self.developerURL:
+            if not isValid(url):
+                msg = "Developer URL is not valid"
+                self._validationErrors.append(msg)
+
+        if self.expireDate:
+            try:
+                datetime.strptime(self.expireDate, self.expireDateFormat)
+            except ValueError:
+                msg = "expire date is not set in the correct format: 'YYYY-MM-DD'. "
+                self._validationErrors.append(msg)
+
+        return not bool(self._validationErrors)
+    
+    def validationErrors(self):
+        """
+        Returns the validation errors as a string.
+        """
+        return "\n".join(self._validationErrors)
