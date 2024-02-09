@@ -29,6 +29,15 @@ Questions:
 
 """
 
+def requirementCompareVersionMustBeEqual(v1, v2):
+    from packaging import version
+    return version.Version(v1) == version.Version(v2)
+
+def requirementCompareVersionCompareEqualOrBigger(v1, v2):
+    from packaging import version
+    return version.Version(v1) >= version.Version(v2)
+
+
 def isValid(url: str) -> bool:
     # from https://stackoverflow.com/a/38020041/1925198
     try:
@@ -306,14 +315,6 @@ class ExtensionBundle:
         requirementMustMatch = "=="
         requirementMinVersion = ">="
 
-        def _requirementCompareVersionMustBeEqual(v1, v2):
-            from packaging import version
-            return version.Version(v1) == version.Version(v2)
-
-        def _requirementCompareVersionCompareEqualOrBigger(v1, v2):
-            from packaging import version
-            return version.Version(v1) >= version.Version(v2)
-
         done = set()
         for requirementKey in requirements.split("\n"):
             requirementKey = requirementKey.strip()
@@ -327,14 +328,14 @@ class ExtensionBundle:
             if requirementMustMatch in requirementKey:
                 requirementKey, versionKey = requirementKey.split(requirementMustMatch)
                 version = (
-                    _requirementCompareVersionMustBeEqual,
+                    requirementCompareVersionMustBeEqual,
                     versionKey.strip(),
                     line.strip(),
                 )
             elif requirementMinVersion in requirementKey:
                 requirementKey, versionKey = requirementKey.split(requirementMinVersion)
                 version = (
-                    _requirementCompareVersionCompareEqualOrBigger,
+                    requirementCompareVersionCompareEqualOrBigger,
                     versionKey.strip(),
                     line.strip(),
                 )
