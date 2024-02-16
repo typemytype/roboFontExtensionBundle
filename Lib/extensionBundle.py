@@ -19,6 +19,7 @@ from markdown.extensions.tables import TableExtension as markdownTableExtension
 from markdown.extensions.toc import TocExtension as markdownTocExtension
 from typing_extensions import (Any, NotRequired, Optional, Self, TypedDict,
                                Union)
+from yaml.resolver import BaseResolver
 
 """
 Notes:
@@ -36,6 +37,16 @@ Notes:
     --> it should become a method (unwrap/start new) of an instance
 
 """
+
+class AsLiteral(str):
+  pass
+
+def represent_literal(dumper, data):
+  return dumper.represent_scalar(
+      BaseResolver.DEFAULT_SCALAR_TAG,
+      data, style="|")
+
+yaml.add_representer(AsLiteral, represent_literal)
 
 def isValidURL(url: str) -> bool:
     # from https://stackoverflow.com/a/38020041/1925198
@@ -276,17 +287,17 @@ class ExtensionBundle:
         destFolder.mkdir(parents=True, exist_ok=True)
 
         with open(destFolder / "info.yaml", mode='w') as yamlFile:
-            yaml.safe_dump(self.infoDictionary, yamlFile, sort_keys=False)
+            yaml.dump(self.infoDictionary, yamlFile, sort_keys=False)
 
         data = {
             "libFolder": "source/lib",
             "resourcesFolder": "source/resources",
             "htmlFolder": "source/html",
-            "requirements": self.requirements,
-            "license": self.license,
+            "requirements": AsLiteral(yaml.dump(self.requirements)),
+            "license": AsLiteral(yaml.dump(self.license)),
         }
         with open(destFolder / "build.yaml", mode='w') as yamlFile:
-            yaml.safe_dump({k: v for k,v in data.items() if v}, yamlFile,
+            yaml.dump({k: v for k,v in data.items() if v}, yamlFile,
                            sort_keys=False,
                            allow_unicode=True)
 
