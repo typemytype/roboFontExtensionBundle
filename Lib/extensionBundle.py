@@ -441,7 +441,7 @@ class ExtensionBundle:
             self._errors.append(msg)
 
         if isinstance(self.launchAtStartUp, int) and self.launchAtStartUp not in {0, 1}:
-            msg = "`html` can be an int, but it should be either 0 or 1"
+            msg = "`launchAtStartUp` can be an int, but it should be either 0 or 1"
             self._errors.append(msg)
 
         if not self.libFolder.exists():
