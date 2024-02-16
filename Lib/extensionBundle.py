@@ -19,15 +19,10 @@ from markdown.extensions.tables import TableExtension as markdownTableExtension
 from markdown.extensions.toc import TocExtension as markdownTocExtension
 from typing_extensions import (Any, NotRequired, Optional, Self, TypedDict,
                                Union)
+from yaml.resolver import BaseResolver
 
 """
 Notes:
-- we should test on the open source side:
-    - reading 👍
-    - writing 👍
-        - should not save if hash is there
-    - validation
-    - extensionHash 👍
 
 (outliner on a fork)
 - prepare yaml files in the repo that can be used to build the extension
@@ -42,6 +37,19 @@ Notes:
     --> it should become a method (unwrap/start new) of an instance
 
 """
+
+
+class AsLiteral(str):
+    pass
+
+
+def represent_literal(dumper, data):
+    return dumper.represent_scalar(
+        BaseResolver.DEFAULT_SCALAR_TAG, data,
+        style="|"
+    )
+
+yaml.add_representer(AsLiteral, represent_literal)
 
 
 def isValidURL(url: str) -> bool:
@@ -281,19 +289,22 @@ class ExtensionBundle:
         destFolder.mkdir(parents=True, exist_ok=True)
 
         with open(destFolder / "info.yaml", mode='w') as yamlFile:
-            yaml.safe_dump(self.infoDictionary, yamlFile, sort_keys=False)
+            yaml.dump(self.infoDictionary, yamlFile, sort_keys=False)
 
         data = {
             "libFolder": "source/lib",
             "resourcesFolder": "source/resources",
             "htmlFolder": "source/html",
-            "requirements": self.requirements,
-            "license": self.license,
+            "requirements": AsLiteral(yaml.dump(self.requirements)),
+            "license": AsLiteral(yaml.dump(self.license)),
         }
         with open(destFolder / "build.yaml", mode='w') as yamlFile:
-            yaml.safe_dump({k: v for k, v in data.items() if v}, yamlFile,
-                           sort_keys=False,
-                           allow_unicode=True)
+            yaml.safe_dump(
+                {k: v for k, v in data.items() if v},
+                yamlFile,
+                sort_keys=False,
+                allow_unicode=True
+            )
 
         copytree(self.libFolder, destFolder / data["libFolder"])
         if htmlFolder := self.htmlFolder:
