@@ -92,7 +92,7 @@ class ExtensionBundle:
     infoPlistFilename = "info.plist"
 
     # Private
-    _validationErrors: list[str] = field(default_factory=list)
+    _errors: list[str] = field(default_factory=list)
 
     def __repr__(self) -> str:
         if self.extensionName:
@@ -282,23 +282,25 @@ class ExtensionBundle:
         destFolder.mkdir(parents=True, exist_ok=True)
 
         with open(destFolder / "info.yaml", mode='w') as yamlFile:
-            yaml.safe_dump(self.infoDictionary, yamlFile)
+            yaml.safe_dump(self.infoDictionary, yamlFile, sort_keys=False)
 
         data = {
             "libFolder": "source/lib",
             "resourcesFolder": "source/resources",
             "htmlFolder": "source/html",
-            "license": self.license,
             "requirements": self.requirements,
+            "license": self.license,
         }
         with open(destFolder / "build.yaml", mode='w') as yamlFile:
-            yaml.safe_dump(data, yamlFile)
+            yaml.safe_dump({k: v for k,v in data.items() if v}, yamlFile,
+                           sort_keys=False,
+                           allow_unicode=True)
 
-        copytree(self.libFolder, destFolder / self.libFolder.name)
+        copytree(self.libFolder, destFolder / data["libFolder"])
         if htmlFolder := self.htmlFolder:
-            copytree(htmlFolder, destFolder / self.htmlFolder.name)
+            copytree(htmlFolder, destFolder / data["htmlFolder"])
         if self.resourcesFolder.exists():
-            copytree(self.resourcesFolder, destFolder / self.resourcesFolder.name)
+            copytree(self.resourcesFolder, destFolder / data["resourcesFolder"])
 
     # ========
     # = docs =
@@ -348,25 +350,27 @@ class ExtensionBundle:
 
 
     def validate(self) -> bool:
+        self._errors = []
+
         if not self.bundlePath.exists():
             msg = "Extension bundle must be saved on disk before it can be validated."
-            self._validationErrors.append(msg)
+            self._errors.append(msg)
             return False
 
         if self.bundlePath.suffix != self.fileExtension:
             msg = f"Extension bundle must be saved with `{self.fileExtension}` suffix."
-            self._validationErrors.append(msg)
+            self._errors.append(msg)
 
         if not self.infoPlistPath.exists():
             msg = "info.plist does not exist, this is required."
-            self._validationErrors.append(msg)
+            self._errors.append(msg)
             return False
 
         try:
             plistlib.loads(self.infoPlistPath.read_bytes())
         except Exception:
             msg = "info.plist is not formatted as a *.plist file and unreadable."
-            self._validationErrors.append(msg)
+            self._errors.append(msg)
             return False
 
         reprToAttribute = {
@@ -378,28 +382,35 @@ class ExtensionBundle:
         for name, attribute in reprToAttribute.items():
             if not isinstance(attribute, str):
                 msg = f"{name} should be a string: {attribute}"
-                self._validationErrors.append(msg)
+                self._errors.append(msg)
             elif len(attribute) == 0:
                 msg = f"{name} cannot be an empty string"
-                self._validationErrors.append(msg)
+                self._errors.append(msg)
 
         if not isinstance(self.addToMenu, list):
             msg = f"Add to Menu should be a list, instead it is a {type(self.addToMenu)}"
-            self._validationErrors.append(msg)
+            self._errors.append(msg)
         else:
             for add in self.addToMenu:
-                for key, annotation in AddToMenuDict.__annotations__.items():
-                    msg = ""
-                    if key in {"path", "preferredName"} and not isinstance(add[key], annotation):
-                        msg = f"Add to Menu `{key}` should be a {annotation}, instead it is a {type(add[key])}"
-                    elif key == "shortKey" and (isinstance(add[key], str) or isinstance(add[key], tuple)):
-                        msg = f"Add to Menu `shortKey` should be a `str` or a `tuple`, instead it is a {type(add[key])}"
-                    elif key == "nestInSubmenus":
-                        if nest := add.get("nestInSubmenus"):
-                            if not (isinstance(nest, bool) or isinstance(nest, int)):
-                                msg = f"Add to Menu `nestInSubmenus` should be a `bool` or a `int`, instead it is a {type(nest)}"
-                    if msg:
-                        self._validationErrors.append(msg)
+                for key in ["path", "preferredName"]:
+                    if key not in add:
+                        msg = f"`{key}` missing from Add to Menu dictionary"
+                        self._errors.append(msg)
+                    elif not isinstance(add[key], str):
+                        msg = f"Add to Menu `{key}` should be a `str`, instead it is a {type(add[key])}"
+                        self._errors.append(msg)
+                
+                if "shortKey" not in add:
+                    msg = f"`shortKey` missing from Add to Menu dictionary"
+                    self._errors.append(msg)
+                elif not (isinstance(add["shortKey"], str) or isinstance(add["shortKey"], tuple)):
+                    msg = f"Add to Menu `shortKey` should be a `str` or a `tuple`, instead it is a {type(add['shortKey'])}"
+                    self._errors.append(msg)
+
+                if nest := add.get("nestInSubmenus"):
+                    if not (isinstance(nest, bool) or isinstance(nest, int)):
+                        msg = f"Add to Menu `nestInSubmenus` should be a `bool` or a `int`, instead it is a {type(nest)}"
+                        self._errors.append(msg)
 
         # check the unwrapped type is not None
         additionalKeys = {
@@ -424,50 +435,58 @@ class ExtensionBundle:
             if attribute := getattr(self, attributeName):
                 if not isinstance(attribute, types):
                     msg = f"{attributeNameToRepr[attributeName]} should be a {types}"
-                    self._validationErrors.append(msg)
+                    self._errors.append(msg)
+
+        if isinstance(self.html, int) and self.html not in {0, 1}:
+            msg = "`html` can be an int, but it should be either 0 or 1"
+            self._errors.append(msg)
+
+        if isinstance(self.launchAtStartUp, int) and self.launchAtStartUp not in {0, 1}:
+            msg = "`html` can be an int, but it should be either 0 or 1"
+            self._errors.append(msg)
 
         if not self.libFolder.exists():
             msg = "Lib folder does not exist, this is required."
-            self._validationErrors.append(msg)
+            self._errors.append(msg)
 
         if mainScript := self.mainScript:
             if not (self.libFolder / mainScript).exists():
                 msg = "Main .py script does not exist, this is required."
-                self._validationErrors.append(msg)
+                self._errors.append(msg)
 
         if uninstallScript := self.uninstallScript:
             if not (self.libFolder / uninstallScript).exists():
                 msg = "Uninstall script does not exist, since it is defined, it is required"
-                self._validationErrors.append(msg)
+                self._errors.append(msg)
 
         for pyPath in self.libFolder.glob("**/*.py"):
             try:
                 compile(pyPath.read_text(), "tool.py", 'exec', ast.PyCF_ONLY_AST)
             except SyntaxError as error:
-                self._validationErrors.append(error.msg)
+                self._errors.append(error.msg)
 
         if url := self.documentationURL:
             if not isValidURL(url):
                 msg = "Documentation URL is not valid"
-                self._validationErrors.append(msg)
+                self._errors.append(msg)
         
         if url := self.developerURL:
             if not isValidURL(url):
                 msg = "Developer URL is not valid"
-                self._validationErrors.append(msg)
+                self._errors.append(msg)
 
         if self.expireDate:
             try:
                 datetime.strptime(self.expireDate, self.expireDateFormat)
             except ValueError:
                 msg = "expire date is not set in the correct format: 'YYYY-MM-DD'. "
-                self._validationErrors.append(msg)
+                self._errors.append(msg)
 
-        return not bool(self._validationErrors)
+        return not bool(self._errors)
 
     def validationErrors(self):
         """
         Returns the validation errors as a string.
         """
         self.validate()
-        return "\n".join(self._validationErrors)
+        return "\n".join(self._errors)
