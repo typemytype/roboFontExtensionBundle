@@ -30,13 +30,6 @@ Questions:
 
 """
 
-def requirementCompareVersionMustBeEqual(v1, v2):
-    from packaging import version
-    return version.Version(v1) == version.Version(v2)
-
-def requirementCompareVersionCompareEqualOrBigger(v1, v2):
-    from packaging import version
-    return version.Version(v1) >= version.Version(v2)
 
 
 def isValid(url: str) -> bool:
