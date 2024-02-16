@@ -6,7 +6,7 @@ import time
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from shutil import copy, copytree, rmtree
+from shutil import copytree, rmtree
 from urllib.parse import urlparse
 
 import markdown
@@ -246,11 +246,6 @@ class ExtensionBundle:
         rmtree(tempDir)
         return self.validate()
     
-    def unpack(self, destFolder: Path):
-        """
-        Save data on disk as unpacked source data
-        Helpful for converting existing bundles into repositories
-
     def extensionHash(self, passphrase="") -> str:
         from os import walk
 
@@ -277,6 +272,11 @@ class ExtensionBundle:
                             break
                         digest.update(buf)
         return digest.hexdigest()
+
+    def unpack(self, destFolder: Path):
+        """
+        Save data on disk as unpacked source data
+        Helpful for converting existing bundles into repositories
 
         """
         destFolder.mkdir(parents=True, exist_ok=True)
