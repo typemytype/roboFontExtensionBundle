@@ -22,12 +22,6 @@ from typing_extensions import (Any, NotRequired, Optional, Self, TypedDict,
 
 """
 Notes:
-- we should test on the open source side:
-    - reading 👍
-    - writing 👍
-        - should not save if hash is there
-    - validation
-    - extensionHash 👍
 
 (outliner on a fork)
 - prepare yaml files in the repo that can be used to build the extension
