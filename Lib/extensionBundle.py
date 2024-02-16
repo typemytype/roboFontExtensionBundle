@@ -16,7 +16,6 @@ from markdown.extensions.fenced_code import \
     FencedCodeExtension as markdownFencedCodeExtension
 from markdown.extensions.tables import TableExtension as markdownTableExtension
 from markdown.extensions.toc import TocExtension as markdownTocExtension
-from pydantic.dataclasses import dataclass
 from typing_extensions import (Any, NotRequired, Optional, Self, TypedDict,
                                Union)
 
