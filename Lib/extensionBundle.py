@@ -44,10 +44,20 @@ class AsLiteral(str):
 
 
 def represent_literal(dumper, data):
+    data = data.rstrip()
+    optimized = []
+    for line in data.splitlines():
+        line = line.rstrip()
+        optimized.append(line)
+
+    optimized.append("")
+
     return dumper.represent_scalar(
-        BaseResolver.DEFAULT_SCALAR_TAG, data,
+        BaseResolver.DEFAULT_SCALAR_TAG,
+        "\n".join(optimized),
         style="|"
     )
+
 
 yaml.add_representer(AsLiteral, represent_literal)
 
@@ -286,6 +296,8 @@ class ExtensionBundle:
         Save data on disk as unpacked source data
         Helpful for converting existing bundles into repositories
         """
+        if destFolder.exists():
+            rmtree(destFolder)
         destFolder.mkdir(parents=True, exist_ok=True)
 
         with open(destFolder / "info.yaml", mode='w') as yamlFile:
@@ -295,11 +307,12 @@ class ExtensionBundle:
             "libFolder": "source/lib",
             "resourcesFolder": "source/resources",
             "htmlFolder": "source/html",
-            "requirements": AsLiteral(yaml.dump(self.requirements)),
-            "license": AsLiteral(yaml.dump(self.license)),
+            "requirements": AsLiteral(self.requirements),
+            "license": AsLiteral(self.license),
         }
+
         with open(destFolder / "build.yaml", mode='w') as yamlFile:
-            yaml.safe_dump(
+            yaml.dump(
                 {k: v for k, v in data.items() if v},
                 yamlFile,
                 sort_keys=False,
