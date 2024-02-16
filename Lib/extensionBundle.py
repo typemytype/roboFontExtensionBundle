@@ -56,7 +56,7 @@ def isValid(url: str) -> bool:
 class AddToMenuDict(TypedDict):
     path: str
     preferredName: str
-    shortKey: Union[str, tuple[str, ...]]
+    shortKey: Union[str, tuple[int, str]]
     nestInSubmenus: NotRequired[Union[bool, int]]        # v2
 
 
