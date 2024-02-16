@@ -43,12 +43,13 @@ Notes:
 
 """
 
+
 def isValidURL(url: str) -> bool:
     # from https://stackoverflow.com/a/38020041/1925198
     try:
         result = urlparse(url)
         return all([result.scheme, result.netloc])
-    except:
+    except Exception:
         return False
 
 
@@ -100,11 +101,11 @@ class ExtensionBundle:
         else:
             name = "None" if not self.bundlePath else self.bundlePath.name
             return f"<ExtensionBundle: {name}>"
-        
-    
+
     # =========
     # = paths =
     # =========
+
     @property
     def bundlePath(self) -> Path:
         if not self.path:
@@ -114,31 +115,31 @@ class ExtensionBundle:
     @property
     def licensePath(self) -> Path:
         return self.bundlePath / "license"
-    
+
     @property
     def requirementsPath(self) -> Path:
         return self.bundlePath / "requirements.txt"
-    
+
     @property
     def libFolder(self) -> Path:
         return self.bundlePath / "lib"
-    
+
     @property
     def htmlFolder(self) -> Path:
         return self.bundlePath / "html"
-    
+
     @property
     def hashPath(self) -> Path:
         return self.bundlePath / ".hash"
-    
+
     @property
     def resourcesFolder(self) -> Path:
         return self.bundlePath / "resources"
-    
+
     @property
     def infoPlistPath(self) -> Path:
         return self.bundlePath / "info.plist"
-    
+
     @property
     def hasHTML(self) -> bool:
         return (self.htmlFolder / self.indexHTMLName).exists()
@@ -170,11 +171,11 @@ class ExtensionBundle:
     # ================
     # = classmethods =
     # ================
+
     @classmethod
     def load(cls, bundlePath: Path) -> Self:
         """
         From an existing bundle
-
         """
         plistLibPath = bundlePath / cls.infoPlistFilename
         assert plistLibPath.exists(), "info.plist file is missing, required to load the extension"
@@ -185,30 +186,29 @@ class ExtensionBundle:
         hashPath = bundlePath / ".hash"
 
         return cls(
-            extensionName = plist.get("name") or plist.get("extensionName"),
-            path = bundlePath,
-            developer = plist["developer"],
-            developerURL = plist["developerURL"],
-            launchAtStartUp = plist["launchAtStartUp"],
-            mainScript = plist["mainScript"],
-            version = plist["version"],
-            addToMenu = [AddToMenuDict(i) for i in plist.get("addToMenu", [])],
-            html = plist["html"],
+            extensionName=plist.get("name") or plist.get("extensionName"),
+            path=bundlePath,
+            developer=plist["developer"],
+            developerURL=plist["developerURL"],
+            launchAtStartUp=plist["launchAtStartUp"],
+            mainScript=plist["mainScript"],
+            version=plist["version"],
+            addToMenu=[AddToMenuDict(i) for i in plist.get("addToMenu", [])],
+            html=plist["html"],
             hash=hashPath.read_text() if hashPath.exists() else "",
-            documentationURL = plist.get("documentationURL"),
-            uninstallScript = plist.get("uninstallScript"),
-            timeStamp = plist.get("timeStamp"),
-            requiresVersionMajor = plist.get("requiresVersionMajor"),
-            requiresVersionMinor = plist.get("requiresVersionMinor"),
-            expireDate = plist.get("expireDate"),
-            license = licensePath.read_text() if licensePath.exists() else "",
-            requirements = requirementsPath.read_text() if requirementsPath.exists() else "",
+            documentationURL=plist.get("documentationURL"),
+            uninstallScript=plist.get("uninstallScript"),
+            timeStamp=plist.get("timeStamp"),
+            requiresVersionMajor=plist.get("requiresVersionMajor"),
+            requiresVersionMinor=plist.get("requiresVersionMinor"),
+            expireDate=plist.get("expireDate"),
+            license=licensePath.read_text() if licensePath.exists() else "",
+            requirements=requirementsPath.read_text() if requirementsPath.exists() else "",
         )
 
     def save(self, destPath: Path, libFolder: Optional[Path] = None, htmlFolder: Optional[Path] = None, resourcesFolder: Optional[Path] = None):
         """
         Save the bundle to disk
-
         """
         assert self.hash == "", "Cannot save this extension"
         assert destPath.suffix == self.fileExtension, "Wrong file extension"
@@ -216,17 +216,17 @@ class ExtensionBundle:
         if unwrappedLibPath := libFolder or self.libFolder:
             assert unwrappedLibPath.exists(), "Lib folder is required to save"
         else:
-            assert False, "Lib folder is required to save" 
+            assert False, "Lib folder is required to save"
 
         self.timeStamp = time.time()
         tempDir = Path(tempfile.mkdtemp())
 
         copytree(libFolder or self.libFolder, tempDir / self.libFolder.name)
-        
+
         if (htmlFolder and htmlFolder.exists()) or self.htmlFolder.exists():
             copytree(htmlFolder or self.htmlFolder, tempDir / self.htmlFolder.name)
             self.convertMarkdown(tempDir / self.htmlFolder.name)
-        
+
         if (resourcesFolder and resourcesFolder.exists()) or self.resourcesFolder.exists():
             copytree(resourcesFolder or self.resourcesFolder, tempDir / self.resourcesFolder.name)
 
@@ -245,7 +245,7 @@ class ExtensionBundle:
         copytree(tempDir, destPath)
         rmtree(tempDir)
         return self.validate()
-    
+
     def extensionHash(self, passphrase="") -> str:
         from os import walk
 
@@ -277,7 +277,6 @@ class ExtensionBundle:
         """
         Save data on disk as unpacked source data
         Helpful for converting existing bundles into repositories
-
         """
         destFolder.mkdir(parents=True, exist_ok=True)
 
@@ -292,7 +291,7 @@ class ExtensionBundle:
             "license": self.license,
         }
         with open(destFolder / "build.yaml", mode='w') as yamlFile:
-            yaml.safe_dump({k: v for k,v in data.items() if v}, yamlFile,
+            yaml.safe_dump({k: v for k, v in data.items() if v}, yamlFile,
                            sort_keys=False,
                            allow_unicode=True)
 
@@ -305,6 +304,7 @@ class ExtensionBundle:
     # ========
     # = docs =
     # ========
+
     def convertMarkdown(self, htmlFolder: Path):
         """
         Convert documentation sources from Markdown to HTML.
@@ -347,7 +347,6 @@ class ExtensionBundle:
                 html = htmlTemplate % (styleData, htmlData)
                 with open(destPath, "w", encoding="utf-8") as f:
                     f.write(html)
-
 
     def validate(self) -> bool:
         self._errors = []
@@ -399,7 +398,7 @@ class ExtensionBundle:
                     elif not isinstance(add[key], str):
                         msg = f"Add to Menu `{key}` should be a `str`, instead it is a {type(add[key])}"
                         self._errors.append(msg)
-                
+
                 if "shortKey" not in add:
                     msg = f"`shortKey` missing from Add to Menu dictionary"
                     self._errors.append(msg)
@@ -469,7 +468,7 @@ class ExtensionBundle:
             if not isValidURL(url):
                 msg = "Documentation URL is not valid"
                 self._errors.append(msg)
-        
+
         if url := self.developerURL:
             if not isValidURL(url):
                 msg = "Developer URL is not valid"
