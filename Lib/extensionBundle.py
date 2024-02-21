@@ -11,14 +11,15 @@ from urllib.parse import urlparse
 
 import markdown
 import yaml
-from markdown.extensions.codehilite import \
-    CodeHiliteExtension as markdownCodeHiliteExtension
-from markdown.extensions.fenced_code import \
-    FencedCodeExtension as markdownFencedCodeExtension
+from markdown.extensions.codehilite import (
+    CodeHiliteExtension as markdownCodeHiliteExtension,
+)
+from markdown.extensions.fenced_code import (
+    FencedCodeExtension as markdownFencedCodeExtension,
+)
 from markdown.extensions.tables import TableExtension as markdownTableExtension
 from markdown.extensions.toc import TocExtension as markdownTocExtension
-from typing_extensions import (Any, NotRequired, Optional, Self, TypedDict,
-                               Union)
+from typing_extensions import Any, NotRequired, Optional, Self, TypedDict, Union
 from yaml.resolver import BaseResolver
 
 """
@@ -53,9 +54,7 @@ def represent_literal(dumper, data):
     optimized.append("")
 
     return dumper.represent_scalar(
-        BaseResolver.DEFAULT_SCALAR_TAG,
-        "\n".join(optimized),
-        style="|"
+        BaseResolver.DEFAULT_SCALAR_TAG, "\n".join(optimized), style="|"
     )
 
 
@@ -75,7 +74,23 @@ class AddToMenuDict(TypedDict):
     path: str
     preferredName: str
     shortKey: Union[str, tuple[int, str]]
-    nestInSubmenus: NotRequired[Union[bool, int]]        # v2
+    nestInSubmenus: NotRequired[Union[bool, int]]  # v2
+
+
+def loadFromPlist(mapping: dict) -> AddToMenuDict:
+    dictionary: AddToMenuDict = {
+        "path": mapping["path"],
+        "preferredName": mapping["preferredName"],
+        "shortKey": (
+            tuple(mapping["shortKey"])
+            if isinstance(mapping["shortKey"], list)
+            else mapping["shortKey"]
+        ),
+    }
+    if "nestInSubmenus" in mapping:
+        dictionary["nestInSubmenus"] = mapping["nestInSubmenus"]
+
+    return dictionary
 
 
 @dataclass
@@ -90,9 +105,11 @@ class ExtensionBundle:
     addToMenu: list[AddToMenuDict] = field(default_factory=list)
 
     path: Optional[Path] = None
-    html: Optional[bool] = None                # to be deprecated, DOCS
-    documentationURL: Optional[str] = None     # if provided it must start with 'http(s)://' v4
-    uninstallScript: Optional[str] = None      # v2
+    html: Optional[bool] = None  # to be deprecated, DOCS
+    documentationURL: Optional[str] = (
+        None  # if provided it must start with 'http(s)://' v4
+    )
+    uninstallScript: Optional[str] = None  # v2
 
     timeStamp: Optional[float] = None
     hash: str = ""
@@ -100,7 +117,7 @@ class ExtensionBundle:
     requiresVersionMajor: Optional[str] = None
     requiresVersionMinor: Optional[str] = None
 
-    expireDate: Optional[str] = None                  # if set use the format YYYY-MM-DD
+    expireDate: Optional[str] = None  # if set use the format YYYY-MM-DD
     license: str = ""
     requirements: str = ""
 
@@ -164,7 +181,9 @@ class ExtensionBundle:
 
     @property
     def hasDocumentation(self) -> bool:
-        return (self.htmlFolder / self.indexHTMLName).exists() or bool(self.documentationURL)
+        return (self.htmlFolder / self.indexHTMLName).exists() or bool(
+            self.documentationURL
+        )
 
     @property
     def infoDictionary(self) -> dict[str, Any]:
@@ -196,7 +215,9 @@ class ExtensionBundle:
         From an existing bundle
         """
         plistLibPath = bundlePath / cls.infoPlistFilename
-        assert plistLibPath.exists(), "info.plist file is missing, required to load the extension"
+        assert (
+            plistLibPath.exists()
+        ), "info.plist file is missing, required to load the extension"
         plist = plistlib.loads(plistLibPath.read_bytes())
 
         licensePath = bundlePath / "license"
@@ -209,10 +230,10 @@ class ExtensionBundle:
             developer=plist["developer"],
             developerURL=plist["developerURL"],
             launchAtStartUp=plist["launchAtStartUp"],
-            mainScript=plist["mainScript"],
+            mainScript=plist.get("mainScript"),
             version=plist["version"],
-            addToMenu=[AddToMenuDict(i) for i in plist.get("addToMenu", [])],
-            html=plist["html"],
+            addToMenu=[loadFromPlist(i) for i in plist.get("addToMenu", [])],
+            html=plist.get("html"),
             hash=hashPath.read_text() if hashPath.exists() else "",
             documentationURL=plist.get("documentationURL"),
             uninstallScript=plist.get("uninstallScript"),
@@ -221,10 +242,18 @@ class ExtensionBundle:
             requiresVersionMinor=plist.get("requiresVersionMinor"),
             expireDate=plist.get("expireDate"),
             license=licensePath.read_text() if licensePath.exists() else "",
-            requirements=requirementsPath.read_text() if requirementsPath.exists() else "",
+            requirements=(
+                requirementsPath.read_text() if requirementsPath.exists() else ""
+            ),
         )
 
-    def save(self, destPath: Path, libFolder: Optional[Path] = None, htmlFolder: Optional[Path] = None, resourcesFolder: Optional[Path] = None):
+    def save(
+        self,
+        destPath: Path,
+        libFolder: Optional[Path] = None,
+        htmlFolder: Optional[Path] = None,
+        resourcesFolder: Optional[Path] = None,
+    ):
         """
         Save the bundle to disk
         """
@@ -245,11 +274,18 @@ class ExtensionBundle:
             copytree(htmlFolder or self.htmlFolder, tempDir / self.htmlFolder.name)
             self.convertMarkdown(tempDir / self.htmlFolder.name)
 
-        if (resourcesFolder and resourcesFolder.exists()) or self.resourcesFolder.exists():
-            copytree(resourcesFolder or self.resourcesFolder, tempDir / self.resourcesFolder.name)
+        if (
+            resourcesFolder and resourcesFolder.exists()
+        ) or self.resourcesFolder.exists():
+            copytree(
+                resourcesFolder or self.resourcesFolder,
+                tempDir / self.resourcesFolder.name,
+            )
 
         plist = self.infoDictionary
-        (tempDir / "info.plist").write_bytes(plistlib.dumps({k: v for k, v in plist.items() if v}))
+        (tempDir / "info.plist").write_bytes(
+            plistlib.dumps({k: v for k, v in plist.items() if v})
+        )
 
         if self.license:
             (tempDir / self.licensePath.name).write_text(self.license)
@@ -300,7 +336,7 @@ class ExtensionBundle:
             rmtree(destFolder)
         destFolder.mkdir(parents=True, exist_ok=True)
 
-        with open(destFolder / "info.yaml", mode='w') as yamlFile:
+        with open(destFolder / "info.yaml", mode="w") as yamlFile:
             yaml.dump(self.infoDictionary, yamlFile, sort_keys=False)
 
         data = {
@@ -311,12 +347,12 @@ class ExtensionBundle:
             "license": AsLiteral(self.license),
         }
 
-        with open(destFolder / "build.yaml", mode='w') as yamlFile:
+        with open(destFolder / "build.yaml", mode="w") as yamlFile:
             yaml.dump(
                 {k: v for k, v in data.items() if v},
                 yamlFile,
                 sort_keys=False,
-                allow_unicode=True
+                allow_unicode=True,
             )
 
         copytree(self.libFolder, destFolder / data["libFolder"])
@@ -399,7 +435,7 @@ class ExtensionBundle:
             "Extension name": self.extensionName,
             "Developer name": self.developer,
             "Developer URL": self.developerURL,
-            "Extension version": self.version
+            "Extension version": self.version,
         }
         for name, attribute in reprToAttribute.items():
             if not isinstance(attribute, str):
@@ -410,7 +446,9 @@ class ExtensionBundle:
                 self._errors.append(msg)
 
         if not isinstance(self.addToMenu, list):
-            msg = f"Add to Menu should be a list, instead it is a {type(self.addToMenu)}"
+            msg = (
+                f"Add to Menu should be a list, instead it is a {type(self.addToMenu)}"
+            )
             self._errors.append(msg)
         else:
             for add in self.addToMenu:
@@ -425,7 +463,10 @@ class ExtensionBundle:
                 if "shortKey" not in add:
                     msg = f"`shortKey` missing from Add to Menu dictionary"
                     self._errors.append(msg)
-                elif not (isinstance(add["shortKey"], str) or isinstance(add["shortKey"], tuple)):
+                elif not (
+                    isinstance(add["shortKey"], str)
+                    or isinstance(add["shortKey"], tuple)
+                ):
                     msg = f"Add to Menu `shortKey` should be a `str` or a `tuple`, instead it is a {type(add['shortKey'])}"
                     self._errors.append(msg)
 
@@ -483,7 +524,7 @@ class ExtensionBundle:
 
         for pyPath in self.libFolder.glob("**/*.py"):
             try:
-                compile(pyPath.read_text(), "tool.py", 'exec', ast.PyCF_ONLY_AST)
+                compile(pyPath.read_text(), "tool.py", "exec", ast.PyCF_ONLY_AST)
             except SyntaxError as error:
                 self._errors.append(error.msg)
 
