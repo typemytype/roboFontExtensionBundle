@@ -24,3 +24,6 @@ dev = [
   "pyyaml",
   "pytest",
 ]
+
+[tool.setuptools]
+packages = [ "Lib" ]
