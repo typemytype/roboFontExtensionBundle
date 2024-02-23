@@ -524,8 +524,9 @@ class ExtensionBundle:
 
         for pyPath in self.libFolder.glob("**/*.py"):
             try:
-                compile(pyPath.read_text(), "tool.py", "exec", ast.PyCF_ONLY_AST)
+                compile(pyPath.read_text(), pyPath.name, "exec", ast.PyCF_ONLY_AST)
             except SyntaxError as error:
+                self._errors.append(f"Invalid syntax in {pyPath}:")
                 self._errors.append(error.msg)
 
         if url := self.documentationURL:
