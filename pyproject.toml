@@ -26,4 +26,5 @@ dev = [
 ]
 
 [tool.setuptools]
-packages = [ "Lib" ]
+packages = [ "robofontExtensionBundle" ]
+package-dir.robofontExtensionBundle = "lib"
