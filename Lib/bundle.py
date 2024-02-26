@@ -37,6 +37,20 @@ Notes:
 - work on a script to update an existing extension to this new setup
     --> it should become a method (unwrap/start new) of an instance
 
+
+- Action
+    - every push should validate
+    - every tag should build and create a release
+        also check that tag and info.yaml version match
+            tag can be a normal version, regular release
+            they can also be beta-something, prerelease
+        if not, it should fail
+
+        name of release is going to be <extension name> <major.minor>
+
+    tag: v2.0
+    tag: beta-v2.1
+
 """
 
 

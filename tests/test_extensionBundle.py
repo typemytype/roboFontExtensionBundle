@@ -2,29 +2,32 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 import pytest
-
-from Lib.extensionBundle import ExtensionBundle, isValidURL
+from robofontExtensionBundle.bundle import ExtensionBundle, isValidURL
 
 
 @pytest.fixture
 def dummyOnePath():
     return Path("tests/dummy1.roboFontExt")
 
+
 @pytest.fixture
 def dummyTwoPath():
     return Path("tests/dummy2.roboFontExt")
+
 
 @pytest.fixture
 def singleWindowControllerPath():
     return Path("tests/single_window_controller_template.roboFontExt")
 
+
 urlToValid = {
-    'http://www.cwi.nl:80/%7Eguido/Python.html': True,
-    '/data/Python.html': False,
+    "http://www.cwi.nl:80/%7Eguido/Python.html": True,
+    "/data/Python.html": False,
     532: False,
-    u'dkakasdkjdjakdjadjfalskdjfalk': False,
-    'https://stackoverflow.com': True,
+    "dkakasdkjdjakdjadjfalskdjfalk": False,
+    "https://stackoverflow.com": True,
 }
+
 
 @pytest.mark.parametrize("url, valid", urlToValid.items())
 def test_isValidURL(url, valid):
@@ -35,31 +38,31 @@ def test_bundleInfo():
     bundle = ExtensionBundle()
 
     bundle.extensionName = "test"
-    assert bundle.infoDictionary["name"] == 'test'
+    assert bundle.infoDictionary["name"] == "test"
 
     bundle.developer = "me"
-    assert bundle.infoDictionary["developer"] == 'me'
+    assert bundle.infoDictionary["developer"] == "me"
 
     bundle.developerURL = "http://robofont.com"
-    assert bundle.infoDictionary["developerURL"] == 'http://robofont.com'
+    assert bundle.infoDictionary["developerURL"] == "http://robofont.com"
 
     bundle.version = "1.0"
-    assert bundle.infoDictionary["version"] == '1.0'
+    assert bundle.infoDictionary["version"] == "1.0"
 
     bundle.timeStamp = 123456789
-    assert bundle.infoDictionary['timeStamp'] == 123456789
+    assert bundle.infoDictionary["timeStamp"] == 123456789
 
     bundle.requiresVersionMajor = "1"
-    assert bundle.infoDictionary['requiresVersionMajor'] == '1'
+    assert bundle.infoDictionary["requiresVersionMajor"] == "1"
 
     bundle.requiresVersionMinor = "0"
-    assert bundle.infoDictionary['requiresVersionMinor'] == "0"
+    assert bundle.infoDictionary["requiresVersionMinor"] == "0"
 
     bundle.expireDate = "2019-01-01"
-    assert bundle.infoDictionary['expireDate'] == '2019-01-01'
+    assert bundle.infoDictionary["expireDate"] == "2019-01-01"
 
-    bundle.documentationURL = 'http://robofont.com'
-    assert bundle.infoDictionary['documentationURL'] == 'http://robofont.com'
+    bundle.documentationURL = "http://robofont.com"
+    assert bundle.infoDictionary["documentationURL"] == "http://robofont.com"
 
 
 def test_bundleDefaultPaths():
@@ -73,10 +76,12 @@ def test_bundleDefaultPaths():
     assert bundle.licensePath == Path("root/fileName/license")
     assert bundle.requirementsPath == Path("root/fileName/requirements.txt")
 
+
 def test_folder_existance(dummyOnePath):
     bundle = ExtensionBundle(path=dummyOnePath)
     assert not bundle.hasDocumentation
     assert not bundle.hasHTML
+
 
 def test_readExtension(dummyOnePath):
     bundle = ExtensionBundle.load(dummyOnePath)
@@ -85,14 +90,17 @@ def test_readExtension(dummyOnePath):
     assert bundle.developerURL == "http://typemytype.com"
     assert bundle.version == "1.0"
 
+
 def test_override(dummyOnePath):
     bundle = ExtensionBundle.load(dummyOnePath)
     with pytest.raises(AssertionError):
         bundle.save(destPath=dummyOnePath)
 
+
 def test_repr(singleWindowControllerPath):
     bundle = ExtensionBundle.load(bundlePath=singleWindowControllerPath)
     assert str(bundle) == "<ExtensionBundle: myExtension>"
+
 
 def test_expireDate(dummyOnePath):
     bundle = ExtensionBundle.load(dummyOnePath)
@@ -109,6 +117,7 @@ def test_expireDate(dummyOnePath):
             bundle.save(Path(tmpDir) / "dummy2.roboFontExt")
             assert not bundle.validationErrors()
 
+
 def test_save_dummy(dummyTwoPath):
     bundle = ExtensionBundle.load(dummyTwoPath)
     bundle.extensionName = "dummy3"
@@ -116,12 +125,14 @@ def test_save_dummy(dummyTwoPath):
     with TemporaryDirectory() as tmpDir:
         bundle.save(Path(tmpDir) / "dummy3.roboFontExt")
 
+
 def test_save_template(singleWindowControllerPath):
     bundle = ExtensionBundle.load(singleWindowControllerPath)
     bundle.extensionName = "dummy3"
     bundle.validate()
     with TemporaryDirectory() as tmpDir:
         bundle.save(Path(tmpDir) / "foobar.roboFontExt")
+
 
 def test_extensionHash(dummyOnePath, dummyTwoPath):
     bundleOne = ExtensionBundle.load(dummyOnePath)
@@ -132,11 +143,13 @@ def test_extensionHash(dummyOnePath, dummyTwoPath):
     bundleOne = ExtensionBundle.load(dummyOnePath)
     assert h == bundleOne.extensionHash()
 
+
 def test_invalid_plist():
     with pytest.raises(AssertionError):
         ExtensionBundle.load(bundlePath=Path("tests/missing_plist.roboFontExt"))
     with pytest.raises(Exception):
         ExtensionBundle.load(bundlePath=Path("tests/corrupted_plist.roboFontExt"))
+
 
 def test_validation():
     bundle = ExtensionBundle(extensionName="myExtension")
@@ -153,59 +166,67 @@ def test_validation():
         with pytest.raises(AssertionError):
             bundle.save(Path(tmpDir) / "foobar.robo")
 
-    bundle = ExtensionBundle(extensionName=False) # type: ignore
+    bundle = ExtensionBundle(extensionName=False)  # type: ignore
     assert not bundle.validate()
 
-    bundle = ExtensionBundle(developer=False) # type: ignore
+    bundle = ExtensionBundle(developer=False)  # type: ignore
     assert not bundle.validate()
 
-    bundle = ExtensionBundle(developerURL=False) # type: ignore
+    bundle = ExtensionBundle(developerURL=False)  # type: ignore
     assert not bundle.validate()
 
-    bundle = ExtensionBundle(version=False) # type: ignore
+    bundle = ExtensionBundle(version=False)  # type: ignore
     assert not bundle.validate()
 
-    bundle = ExtensionBundle(addToMenu=set()) # type: ignore
+    bundle = ExtensionBundle(addToMenu=set())  # type: ignore
     assert not bundle.validate()
 
-    bundle = ExtensionBundle(addToMenu=[{"path": False}]) # type: ignore
+    bundle = ExtensionBundle(addToMenu=[{"path": False}])  # type: ignore
     assert not bundle.validate()
 
     bundle = ExtensionBundle.load(bundlePath=Path("tests/dummy1.roboFontExt"))
-    bundle.addToMenu = [{"path": Path("hello.py")}] # type: ignore
+    bundle.addToMenu = [{"path": Path("hello.py")}]  # type: ignore
     assert not bundle.validate()
 
     bundle.addToMenu = [{"path": "hello.py", "preferredName": "Hello", "shortKey": "H"}]
     assert bundle.validate()
 
-    bundle.addToMenu = [{"path": "hello.py", "preferredName": "Hello", "shortKey": "H", "nestInSubmenus": "yes"}] # type: ignore
+    bundle.addToMenu = [{"path": "hello.py", "preferredName": "Hello", "shortKey": "H", "nestInSubmenus": "yes"}]  # type: ignore
     assert not bundle.validate()
 
-    bundle.addToMenu = [{"path": "hello.py", "preferredName": "Hello", "shortKey": "H", "nestInSubmenus": False}]
+    bundle.addToMenu = [
+        {
+            "path": "hello.py",
+            "preferredName": "Hello",
+            "shortKey": "H",
+            "nestInSubmenus": False,
+        }
+    ]
     assert bundle.validate()
 
-    bundle.html = 123 # type: ignore
+    bundle.html = 123  # type: ignore
     assert not bundle.validate()
 
-    bundle.documentationURL = 123 # type: ignore
+    bundle.documentationURL = 123  # type: ignore
     assert not bundle.validate()
 
-    bundle.launchAtStartUp = 123 # type: ignore
+    bundle.launchAtStartUp = 123  # type: ignore
     assert not bundle.validate()
 
-    bundle.mainScript = False # type: ignore
+    bundle.mainScript = False  # type: ignore
     assert not bundle.validate()
 
-    bundle.requiresVersionMajor = 4 # type: ignore
+    bundle.requiresVersionMajor = 4  # type: ignore
     assert not bundle.validate()
 
-    bundle.requiresVersionMinor = 5 # type: ignore
+    bundle.requiresVersionMinor = 5  # type: ignore
     assert not bundle.validate()
 
-    bundle.uninstallScript = False # type: ignore
+    bundle.uninstallScript = False  # type: ignore
     assert not bundle.validate()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     import pytest
+
     pytest.main([__file__])

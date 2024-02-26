@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from Lib.extensionBundle import ExtensionBundle
+from robofontExtensionBundle.bundle import ExtensionBundle
 
 folder = Path(".extensions_cache")
 
