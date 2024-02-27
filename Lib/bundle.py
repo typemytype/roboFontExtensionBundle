@@ -573,31 +573,31 @@ class ExtensionBundle:
 
 @click.command()
 @click.option(
-    "--infoPath",
+    "--info_path",
     help="info.yaml path",
     type=click.Path(exists=True, file_okay=True, readable=True, path_type=Path),
 )
 @click.option(
-    "--buildPath",
+    "--build_path",
     help="build.yaml path",
     type=click.Path(exists=True, file_okay=True, readable=True, path_type=Path),
 )
 @click.option(
-    "--destPath",
+    "--dest_path",
     help="RoboFont Extension path",
     type=click.Path(path_type=Path),
 )
-def pack(infoPath: Path, buildPath: Path, destPath: Path):
+def pack(info_path: Path, build_path: Path, dest_path: Path):
     """
     From unpacked data to extension bundle
 
     """
-    assert infoPath.exists(), "Missing infoPath"
-    assert buildPath.exists(), "Missing buildPath"
+    assert info_path.exists(), "info_path does not exist"
+    assert build_path.exists(), "build_path does not exist"
 
-    with open(infoPath) as yamlFile:
+    with open(info_path) as yamlFile:
         infoData = yaml.safe_load(yamlFile)
-    with open(buildPath) as yamlFile:
+    with open(build_path) as yamlFile:
         buildData = yaml.safe_load(yamlFile)
 
     bundle = ExtensionBundle(
@@ -618,7 +618,7 @@ def pack(infoPath: Path, buildPath: Path, destPath: Path):
         requirements=buildData.get("requirements", "") or "",
     )
     bundle.save(
-        destPath=destPath,
+        destPath=dest_path,
         libFolder=buildData["libFolder"],
         htmlFolder=buildData.get("htmlFolder"),
         resourcesFolder=buildData.get("resourcesFolder"),
