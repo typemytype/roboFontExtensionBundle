@@ -67,7 +67,7 @@ def pack(
 
     if zip_extension:
         shutil.make_archive(str(destPath), format="zip", base_dir=destPath)
-        destPath.unlink()
+        shutil.rmtree(destPath)
 
     if env := os.getenv("GITHUB_ENV"):
         with open(env, mode="a") as envFile:  # type: ignore
