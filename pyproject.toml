@@ -27,7 +27,7 @@ dev = [
 ]
 
 [project.scripts]
-pack_extension = "robofontExtensionBundle.bundle:ExtensionBundle.pack"
+pack_extension = "robofontExtensionBundle.bundle:pack"
 
 [tool.setuptools]
 packages = [ "robofontExtensionBundle" ]

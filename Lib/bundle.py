@@ -376,60 +376,6 @@ class ExtensionBundle:
         if self.resourcesFolder.exists():
             copytree(self.resourcesFolder, destFolder / data["resourcesFolder"])
 
-    @click.command()
-    @click.option(
-        "--infoPath",
-        help="info.yaml path",
-        type=click.Path(exists=True, file_okay=True, readable=True, path_type=Path),
-    )
-    @click.option(
-        "--buildPath",
-        help="build.yaml path",
-        type=click.Path(exists=True, file_okay=True, readable=True, path_type=Path),
-    )
-    @click.option(
-        "--destPath",
-        help="RoboFont Extension path",
-        type=click.Path(path_type=Path),
-    )
-    @classmethod
-    def pack(cls, infoPath: Path, buildPath: Path, destPath: Path):
-        """
-        From unpacked data to extension bundle
-
-        """
-        assert infoPath.exists(), "Missing infoPath"
-        assert buildPath.exists(), "Missing buildPath"
-
-        with open(infoPath) as yamlFile:
-            infoData = yaml.safe_load(yamlFile)
-        with open(buildPath) as yamlFile:
-            buildData = yaml.safe_load(yamlFile)
-
-        bundle = cls(
-            extensionName=infoData.get("name") or infoData.get("extensionName"),
-            developer=infoData["developer"],
-            developerURL=infoData["developerURL"],
-            launchAtStartUp=infoData["launchAtStartUp"],
-            mainScript=infoData.get("mainScript"),
-            version=infoData["version"],
-            addToMenu=[loadFromPlist(i) for i in infoData.get("addToMenu", [])],
-            html=infoData.get("html"),
-            documentationURL=infoData.get("documentationURL"),
-            uninstallScript=infoData.get("uninstallScript"),
-            requiresVersionMajor=infoData.get("requiresVersionMajor"),
-            requiresVersionMinor=infoData.get("requiresVersionMinor"),
-            expireDate=infoData.get("expireDate"),
-            license=buildData.get("license", ""),
-            requirements=buildData.get("requirements", "") or "",
-        )
-        bundle.save(
-            destPath=destPath,
-            libFolder=buildData["libFolder"],
-            htmlFolder=buildData.get("htmlFolder"),
-            resourcesFolder=buildData.get("resourcesFolder"),
-        )
-
     # ========
     # = docs =
     # ========
@@ -623,3 +569,57 @@ class ExtensionBundle:
         """
         self.validate()
         return "\n".join(self._errors)
+
+
+@click.command()
+@click.option(
+    "--infoPath",
+    help="info.yaml path",
+    type=click.Path(exists=True, file_okay=True, readable=True, path_type=Path),
+)
+@click.option(
+    "--buildPath",
+    help="build.yaml path",
+    type=click.Path(exists=True, file_okay=True, readable=True, path_type=Path),
+)
+@click.option(
+    "--destPath",
+    help="RoboFont Extension path",
+    type=click.Path(path_type=Path),
+)
+def pack(infoPath: Path, buildPath: Path, destPath: Path):
+    """
+    From unpacked data to extension bundle
+
+    """
+    assert infoPath.exists(), "Missing infoPath"
+    assert buildPath.exists(), "Missing buildPath"
+
+    with open(infoPath) as yamlFile:
+        infoData = yaml.safe_load(yamlFile)
+    with open(buildPath) as yamlFile:
+        buildData = yaml.safe_load(yamlFile)
+
+    bundle = ExtensionBundle(
+        extensionName=infoData.get("name") or infoData.get("extensionName"),
+        developer=infoData["developer"],
+        developerURL=infoData["developerURL"],
+        launchAtStartUp=infoData["launchAtStartUp"],
+        mainScript=infoData.get("mainScript"),
+        version=infoData["version"],
+        addToMenu=[loadFromPlist(i) for i in infoData.get("addToMenu", [])],
+        html=infoData.get("html"),
+        documentationURL=infoData.get("documentationURL"),
+        uninstallScript=infoData.get("uninstallScript"),
+        requiresVersionMajor=infoData.get("requiresVersionMajor"),
+        requiresVersionMinor=infoData.get("requiresVersionMinor"),
+        expireDate=infoData.get("expireDate"),
+        license=buildData.get("license", ""),
+        requirements=buildData.get("requirements", "") or "",
+    )
+    bundle.save(
+        destPath=destPath,
+        libFolder=buildData["libFolder"],
+        htmlFolder=buildData.get("htmlFolder"),
+        resourcesFolder=buildData.get("resourcesFolder"),
+    )
