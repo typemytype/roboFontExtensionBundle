@@ -18,6 +18,7 @@ dependencies = [
   "typing-extensions",
   "packaging",
   "pyyaml",
+  "click"
 ]
 
 [project.optional-dependencies]
