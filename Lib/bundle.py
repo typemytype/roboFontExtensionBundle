@@ -8,6 +8,7 @@ from datetime import datetime
 from pathlib import Path
 from shutil import copytree, rmtree
 from urllib.parse import urlparse
+import sys
 
 import click
 import markdown
@@ -574,20 +575,17 @@ class ExtensionBundle:
 @click.command()
 @click.option(
     "--info_path",
+    default=Path("info.yaml"),
     help="info.yaml path",
     type=click.Path(exists=True, file_okay=True, readable=True, path_type=Path),
 )
 @click.option(
     "--build_path",
+    default=Path("info.yaml"),
     help="build.yaml path",
     type=click.Path(exists=True, file_okay=True, readable=True, path_type=Path),
 )
-@click.option(
-    "--dest_path",
-    help="RoboFont Extension path",
-    type=click.Path(path_type=Path),
-)
-def pack(info_path: Path, build_path: Path, dest_path: Path):
+def pack(info_path: Path, build_path: Path):
     """
     From unpacked data to extension bundle
 
@@ -599,6 +597,8 @@ def pack(info_path: Path, build_path: Path, dest_path: Path):
         infoData = yaml.safe_load(yamlFile)
     with open(build_path) as yamlFile:
         buildData = yaml.safe_load(yamlFile)
+    destPath = Path(buildData.get("extensionPath", f"{infoData["name"]}.roboFontExt"))
+    print(destPath)
 
     bundle = ExtensionBundle(
         extensionName=infoData.get("name") or infoData.get("extensionName"),
@@ -627,11 +627,14 @@ def pack(info_path: Path, build_path: Path, dest_path: Path):
         resourcesFolder = Path(resourcesFolder)
 
     bundle.save(
-        destPath=dest_path,
+        destPath=destPath,
         libFolder=Path(buildData["libFolder"]),
         htmlFolder=htmlFolder,
         resourcesFolder=resourcesFolder,
     )
 
-    bundle = ExtensionBundle.load(bundlePath=dest_path)
-    print(bundle._errors)
+    bundle = ExtensionBundle.load(bundlePath=destPath)
+    errors = bundle.validationErrors()
+    if errors:
+        print(errors)
+    sys.exit(bool(errors))
