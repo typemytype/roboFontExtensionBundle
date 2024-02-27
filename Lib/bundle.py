@@ -578,19 +578,20 @@ class ExtensionBundle:
     "--info_path",
     default=Path("info.yaml"),
     help="info.yaml path",
-    type=click.Path(exists=True, file_okay=True, readable=True, path_type=Path),
+    show_default=True,
 )
 @click.option(
     "--build_path",
     default=Path("build.yaml"),
     help="build.yaml path",
-    type=click.Path(exists=True, file_okay=True, readable=True, path_type=Path),
+    show_default=True,
 )
 @click.option(
     "--zip_extension",
     default=False,
+    is_flag=True,
     help="compress extension",
-    type=bool
+    show_default=True,
 )
 def pack(info_path: Path = Path("info.yaml"), build_path: Path = Path("build.yaml"), zip_extension: bool = False):
     """
