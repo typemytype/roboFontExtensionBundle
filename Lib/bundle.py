@@ -2,6 +2,7 @@ import ast
 import hashlib
 import plistlib
 import shutil
+import sys
 import tempfile
 import time
 from dataclasses import dataclass, field
@@ -9,7 +10,6 @@ from datetime import datetime
 from pathlib import Path
 from shutil import copytree, rmtree
 from urllib.parse import urlparse
-import sys
 
 import click
 import markdown
@@ -571,83 +571,3 @@ class ExtensionBundle:
         """
         self.validate()
         return "\n".join(self._errors)
-
-
-@click.command()
-@click.option(
-    "--info_path",
-    default=Path("info.yaml"),
-    help="info.yaml path",
-    show_default=True,
-)
-@click.option(
-    "--build_path",
-    default=Path("build.yaml"),
-    help="build.yaml path",
-    show_default=True,
-)
-@click.option(
-    "--zip_extension",
-    default=False,
-    is_flag=True,
-    help="compress extension",
-    show_default=True,
-)
-def pack(info_path: Path = Path("info.yaml"), build_path: Path = Path("build.yaml"), zip_extension: bool = False):
-    """
-    From unpacked data to extension bundle
-
-    """
-    assert info_path.exists(), "info_path does not exist"
-    assert build_path.exists(), "build_path does not exist"
-
-    with open(info_path) as yamlFile:
-        infoData = yaml.safe_load(yamlFile)
-    with open(build_path) as yamlFile:
-        buildData = yaml.safe_load(yamlFile)
-    destPath = Path(buildData.get("extensionPath", f"{infoData["name"]}.roboFontExt"))
-    print(destPath)
-
-    bundle = ExtensionBundle(
-        extensionName=infoData.get("name") or infoData.get("extensionName"),
-        developer=infoData["developer"],
-        developerURL=infoData["developerURL"],
-        launchAtStartUp=infoData["launchAtStartUp"],
-        mainScript=infoData.get("mainScript"),
-        version=infoData["version"],
-        addToMenu=[loadFromPlist(i) for i in infoData.get("addToMenu", [])],
-        html=infoData.get("html"),
-        documentationURL=infoData.get("documentationURL"),
-        uninstallScript=infoData.get("uninstallScript"),
-        requiresVersionMajor=infoData.get("requiresVersionMajor"),
-        requiresVersionMinor=infoData.get("requiresVersionMinor"),
-        expireDate=infoData.get("expireDate"),
-        license=buildData.get("license", ""),
-        requirements=buildData.get("requirements", "") or "",
-    )
-
-    htmlFolder = buildData.get("htmlFolder")
-    if htmlFolder is not None:
-        htmlFolder = Path(htmlFolder)
-
-    resourcesFolder = buildData.get("resourcesFolder")
-    if resourcesFolder is not None:
-        resourcesFolder = Path(resourcesFolder)
-
-    bundle.save(
-        destPath=destPath,
-        libFolder=Path(buildData["libFolder"]),
-        htmlFolder=htmlFolder,
-        resourcesFolder=resourcesFolder,
-    )
-
-    bundle = ExtensionBundle.load(bundlePath=destPath)
-    errors = bundle.validationErrors()
-
-    if zip_extension:
-        shutil.make_archive(str(destPath), format="zip", base_dir=destPath)
-        destPath.unlink()
-
-    if errors:
-        print(errors)
-    sys.exit(bool(errors))

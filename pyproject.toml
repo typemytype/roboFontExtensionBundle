@@ -18,7 +18,6 @@ dependencies = [
   "typing-extensions",
   "packaging",
   "pyyaml",
-  "click"
 ]
 
 [project.optional-dependencies]
@@ -27,7 +26,7 @@ dev = [
 ]
 
 [project.scripts]
-pack_extension = "robofontExtensionBundle.bundle:pack"
+pack_extension = "robofontExtensionBundle.pack:main"
 
 [tool.setuptools]
 packages = [ "robofontExtensionBundle" ]
