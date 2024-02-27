@@ -617,9 +617,18 @@ def pack(info_path: Path, build_path: Path, dest_path: Path):
         license=buildData.get("license", ""),
         requirements=buildData.get("requirements", "") or "",
     )
+
+    htmlFolder = buildData.get("htmlFolder")
+    if htmlFolder is not None:
+        htmlFolder = Path(htmlFolder)
+
+    resourcesFolder = buildData.get("resourcesFolder")
+    if resourcesFolder is not None:
+        resourcesFolder = Path(resourcesFolder)
+
     bundle.save(
         destPath=dest_path,
-        libFolder=buildData["libFolder"],
-        htmlFolder=buildData.get("htmlFolder"),
-        resourcesFolder=buildData.get("resourcesFolder"),
+        libFolder=Path(buildData["libFolder"]),
+        htmlFolder=htmlFolder,
+        resourcesFolder=resourcesFolder,
     )
