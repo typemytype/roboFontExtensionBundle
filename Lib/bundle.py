@@ -584,10 +584,11 @@ class ExtensionBundle:
 )
 @click.option(
     "--dest_path",
+    default=None,
     help="RoboFont Extension path",
     type=click.Path(path_type=Path),
 )
-def pack(info_path: Path, build_path: Path, dest_path: Path):
+def pack(info_path: Path, build_path: Path, dest_path: Path | None):
     """
     From unpacked data to extension bundle
 
@@ -626,9 +627,12 @@ def pack(info_path: Path, build_path: Path, dest_path: Path):
     if resourcesFolder is not None:
         resourcesFolder = Path(resourcesFolder)
 
-    bundle.save(
-        destPath=dest_path,
-        libFolder=Path(buildData["libFolder"]),
-        htmlFolder=htmlFolder,
-        resourcesFolder=resourcesFolder,
-    )
+    validation = bundle.validate()
+    print(bundle._errors)
+    if validation and dest_path is not None:
+        bundle.save(
+            destPath=dest_path,
+            libFolder=Path(buildData["libFolder"]),
+            htmlFolder=htmlFolder,
+            resourcesFolder=resourcesFolder,
+        )
