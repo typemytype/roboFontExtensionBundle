@@ -588,7 +588,7 @@ class ExtensionBundle:
     help="RoboFont Extension path",
     type=click.Path(path_type=Path),
 )
-def pack(info_path: Path, build_path: Path, dest_path: Path | None):
+def pack(info_path: Path, build_path: Path, dest_path: Optional[Path]):
     """
     From unpacked data to extension bundle
 
