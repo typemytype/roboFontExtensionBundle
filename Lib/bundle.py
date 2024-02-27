@@ -584,7 +584,6 @@ class ExtensionBundle:
 )
 @click.option(
     "--dest_path",
-    default=None,
     help="RoboFont Extension path",
     type=click.Path(path_type=Path),
 )
