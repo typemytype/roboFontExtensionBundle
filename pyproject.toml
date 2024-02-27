@@ -25,6 +25,9 @@ dev = [
   "pytest",
 ]
 
+[project.scripts]
+pack_extension = "robofontExtensionBundle.bundle:ExtensionBundle.pack"
+
 [tool.setuptools]
 packages = [ "robofontExtensionBundle" ]
 package-dir.robofontExtensionBundle = "lib"
