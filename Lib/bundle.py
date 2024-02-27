@@ -582,7 +582,7 @@ class ExtensionBundle:
 )
 @click.option(
     "--build_path",
-    default=Path("info.yaml"),
+    default=Path("build.yaml"),
     help="build.yaml path",
     type=click.Path(exists=True, file_okay=True, readable=True, path_type=Path),
 )
@@ -592,7 +592,7 @@ class ExtensionBundle:
     help="compress extension",
     type=bool
 )
-def pack(info_path: Path, build_path: Path, zip_extension: bool = False):
+def pack(info_path: Path = Path("info.yaml"), build_path: Path = Path("build.yaml"), zip_extension: bool = False):
     """
     From unpacked data to extension bundle
 
