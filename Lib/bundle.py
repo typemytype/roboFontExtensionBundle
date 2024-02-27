@@ -11,7 +11,6 @@ from pathlib import Path
 from shutil import copytree, rmtree
 from urllib.parse import urlparse
 
-import click
 import markdown
 import yaml
 from markdown.extensions.codehilite import (
