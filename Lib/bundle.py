@@ -1,6 +1,7 @@
 import ast
 import hashlib
 import plistlib
+import shutil
 import tempfile
 import time
 from dataclasses import dataclass, field
@@ -585,7 +586,13 @@ class ExtensionBundle:
     help="build.yaml path",
     type=click.Path(exists=True, file_okay=True, readable=True, path_type=Path),
 )
-def pack(info_path: Path, build_path: Path):
+@click.option(
+    "--zip_extension",
+    default=False,
+    help="compress extension",
+    type=bool
+)
+def pack(info_path: Path, build_path: Path, zip_extension: bool = False):
     """
     From unpacked data to extension bundle
 
@@ -635,6 +642,11 @@ def pack(info_path: Path, build_path: Path):
 
     bundle = ExtensionBundle.load(bundlePath=destPath)
     errors = bundle.validationErrors()
+
+    if zip_extension:
+        shutil.make_archive(str(destPath), format="zip", base_dir=destPath)
+        destPath.unlink()
+
     if errors:
         print(errors)
     sys.exit(bool(errors))
