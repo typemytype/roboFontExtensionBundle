@@ -245,7 +245,7 @@ class ExtensionBundle:
             path=bundlePath,
             developer=plist["developer"],
             developerURL=plist["developerURL"],
-            launchAtStartUp=plist["launchAtStartUp"],
+            launchAtStartUp=bool(plist["launchAtStartUp"]),
             mainScript=plist.get("mainScript"),
             version=plist["version"],
             addToMenu=[loadFromPlist(i) for i in plist.get("addToMenu", [])],
