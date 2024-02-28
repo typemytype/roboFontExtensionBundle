@@ -370,8 +370,8 @@ class ExtensionBundle:
             )
 
         copytree(self.libFolder, destFolder / data["libFolder"])
-        if htmlFolder := self.htmlFolder:
-            copytree(htmlFolder, destFolder / data["htmlFolder"])
+        if self.htmlFolder.exists():
+            copytree(self.htmlFolder, destFolder / data["htmlFolder"])
         if self.resourcesFolder.exists():
             copytree(self.resourcesFolder, destFolder / data["resourcesFolder"])
 
