@@ -348,8 +348,6 @@ class ExtensionBundle:
         Save data on disk as unpacked source data
         Helpful for converting existing bundles into repositories
         """
-        if destFolder.exists():
-            rmtree(destFolder)
         destFolder.mkdir(parents=True, exist_ok=True)
 
         with open(destFolder / "info.yaml", mode="w") as yamlFile:
