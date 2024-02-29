@@ -13,14 +13,15 @@ from urllib.parse import urlparse
 
 import markdown
 import yaml
-from markdown.extensions.codehilite import \
-    CodeHiliteExtension as markdownCodeHiliteExtension
-from markdown.extensions.fenced_code import \
-    FencedCodeExtension as markdownFencedCodeExtension
+from markdown.extensions.codehilite import (
+    CodeHiliteExtension as markdownCodeHiliteExtension,
+)
+from markdown.extensions.fenced_code import (
+    FencedCodeExtension as markdownFencedCodeExtension,
+)
 from markdown.extensions.tables import TableExtension as markdownTableExtension
 from markdown.extensions.toc import TocExtension as markdownTocExtension
-from typing_extensions import (Any, NotRequired, Optional, Self, TypedDict,
-                               Union)
+from typing_extensions import Any, NotRequired, Optional, Self, TypedDict, Union
 from yaml.resolver import BaseResolver
 
 """
@@ -350,15 +351,20 @@ class ExtensionBundle:
         destFolder.mkdir(parents=True, exist_ok=True)
 
         with open(destFolder / "info.yaml", mode="w") as yamlFile:
-            yaml.dump(self.infoDictionary, yamlFile, sort_keys=False)
+            yaml.dump({k: v for k, v in self.infoDictionary.items() if k != "timeStamp"}, yamlFile, sort_keys=False)
 
         data = {
             "libFolder": "source/lib",
-            "resourcesFolder": "source/resources",
-            "htmlFolder": "source/html",
             "requirements": AsLiteral(self.requirements),
             "license": AsLiteral(self.license),
         }
+        copytree(self.libFolder, destFolder / data["libFolder"])
+        if self.htmlFolder.exists():
+            data["htmlFolder"] = "source/html"
+            copytree(self.htmlFolder, destFolder / data["htmlFolder"])
+        if self.resourcesFolder.exists():
+            data["resourcesFolder"] = "source/resources"
+            copytree(self.resourcesFolder, destFolder / data["resourcesFolder"])
 
         with open(destFolder / "build.yaml", mode="w") as yamlFile:
             yaml.dump(
@@ -367,12 +373,6 @@ class ExtensionBundle:
                 sort_keys=False,
                 allow_unicode=True,
             )
-
-        copytree(self.libFolder, destFolder / data["libFolder"])
-        if self.htmlFolder.exists():
-            copytree(self.htmlFolder, destFolder / data["htmlFolder"])
-        if self.resourcesFolder.exists():
-            copytree(self.resourcesFolder, destFolder / data["resourcesFolder"])
 
     # ========
     # = docs =
