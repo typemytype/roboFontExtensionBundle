@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "robofontExtensionBundle"
 dynamic = ["version"]
 
-requires-python = "<= 3.9.13"
+requires-python = ">= 3.9"
 authors = [
   {name = "Frederik Berlaen", email = "frederik@typemytype.com"},
   {name = "Roberto Arista", email = "arista.rob@gmail.com"},
