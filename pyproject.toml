@@ -30,4 +30,4 @@ pack_extension = "roboFontExtensionBundle.pack:main"
 
 [tool.setuptools]
 packages = [ "roboFontExtensionBundle" ]
-package-dir.robofontExtensionBundle = "Lib"
+package-dir.roboFontExtensionBundle = "Lib"
