@@ -1,13 +1,14 @@
 from pathlib import Path
 
-from robofontExtensionBundle.bundle import ExtensionBundle
+from roboFontExtensionBundle.bundle import ExtensionBundle
 
 folder = Path(".extensions_cache")
 
 if __name__ == "__main__":
     errorsLog = []
     for eachPath in folder.glob("**/*.roboFontExt"):
-        bundle = ExtensionBundle.load(bundlePath=eachPath)
+        bundle = ExtensionBundle()
+        bundle.load(bundlePath=eachPath)
         errors = bundle.validationErrors()
 
         if errors:

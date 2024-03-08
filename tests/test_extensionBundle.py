@@ -2,7 +2,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 import pytest
-from robofontExtensionBundle.bundle import ExtensionBundle, isValidURL
+from roboFontExtensionBundle.bundle import ExtensionBundle, isValidURL
 
 
 @pytest.fixture
@@ -141,20 +141,25 @@ def test_save_template(singleWindowControllerPath):
 
 
 def test_extensionHash(dummyOnePath, dummyTwoPath):
-    bundleOne = ExtensionBundle.load(dummyOnePath)
+    bundleOne = ExtensionBundle()
+    bundleOne.load(dummyOnePath)
     h = bundleOne.extensionHash()
-    bundleTwo = ExtensionBundle.load(dummyTwoPath)
+    bundleTwo = ExtensionBundle()
+    bundleTwo.load(dummyTwoPath)
     assert h != bundleTwo.extensionHash()
 
-    bundleOne = ExtensionBundle.load(dummyOnePath)
+    bundleOne = ExtensionBundle()
+    bundleOne.load(dummyOnePath)
     assert h == bundleOne.extensionHash()
 
 
 def test_invalid_plist():
     with pytest.raises(AssertionError):
-        ExtensionBundle.load(bundlePath=Path("tests/missing_plist.roboFontExt"))
+        bundle = ExtensionBundle()
+        bundle.load(bundlePath=Path("tests/missing_plist.roboFontExt"))
     with pytest.raises(Exception):
-        ExtensionBundle.load(bundlePath=Path("tests/corrupted_plist.roboFontExt"))
+        bundle = ExtensionBundle()
+        bundle.load(bundlePath=Path("tests/corrupted_plist.roboFontExt"))
 
 
 def test_validation():
