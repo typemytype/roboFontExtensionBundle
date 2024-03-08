@@ -335,7 +335,12 @@ class ExtensionBundle:
         destFolder.mkdir(parents=True, exist_ok=True)
 
         with open(destFolder / "info.yaml", mode="w") as yamlFile:
-            yaml.dump({k: v for k, v in self.infoDictionary.items() if k != "timeStamp"}, yamlFile, sort_keys=False)
+            yaml.dump(
+                {k: v for k, v in self.infoDictionary.items() if k != "timeStamp"},
+                yamlFile,
+                sort_keys=False,
+                allow_unicode=True,
+            )
 
         data = {
             "libFolder": "source/lib",
