@@ -146,6 +146,9 @@ class ExtensionBundle:
     _errors: list[str] = field(default_factory=list)
 
     def __post_init__(self):
+        if self.bundlePath is not None:
+            # must be a Path object
+            self.bundlePath = Path(self.bundlePath)
         if self.bundleExists():
             self.load(self.bundlePath)
 
@@ -312,8 +315,7 @@ class ExtensionBundle:
         Loads data from an existing bundle
 
         """
-        if isinstance(bundlePath, str):
-            bundlePath = Path(bundlePath)
+        bundlePath = Path(bundlePath)
 
         plistLibPath = bundlePath / self.infoPlistFilename
         assert (
