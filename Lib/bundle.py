@@ -344,9 +344,9 @@ class ExtensionBundle:
         self.requiresVersionMajor = plist.get("requiresVersionMajor")
         self.requiresVersionMinor = plist.get("requiresVersionMinor")
         self.expireDate = plist.get("expireDate")
-        self.license = licensePath.read_text() if licensePath.exists() else ""
+        self.license = licensePath.read_text(encoding="utf-8") if licensePath.exists() else ""
         self.requirements = (
-            requirementsPath.read_text() if requirementsPath.exists() else ""
+            requirementsPath.read_text(encoding="utf-8") if requirementsPath.exists() else ""
         )
 
     def save(
@@ -639,7 +639,7 @@ class ExtensionBundle:
 
         for pyPath in self.libFolder.glob("**/*.py"):
             try:
-                compile(pyPath.read_text(), pyPath.name, "exec", ast.PyCF_ONLY_AST)
+                compile(pyPath.read_text(encoding="utf-8"), pyPath.name, "exec", ast.PyCF_ONLY_AST)
             except SyntaxError as error:
                 self._errors.append(f"Invalid syntax in {pyPath}:")
                 self._errors.append(error.msg)
