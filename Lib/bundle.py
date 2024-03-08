@@ -96,7 +96,7 @@ def loadFromPlist(mapping: dict) -> AddToMenuDict:
 @dataclass
 class ExtensionBundle:
 
-    extensionName: Optional[str] = None
+    name: Optional[str] = None
     developer: Optional[str] = None
     developerURL: Optional[str] = None
     launchAtStartUp: Optional[bool] = None
@@ -130,6 +130,10 @@ class ExtensionBundle:
     # Private
     _errors: list[str] = field(default_factory=list)
 
+    def __post_init__(self):
+        if self.bundleExists():
+            self.load(self.bundlePath)
+
     def __repr__(self) -> str:
         if self.extensionName:
             return f"<ExtensionBundle: {self.extensionName}>"
@@ -146,6 +150,10 @@ class ExtensionBundle:
         if not self.path:
             return Path(self.extensionName or "extension")
         return self.path
+
+    @property
+    def fileName(self) -> Path:
+        return self.bundlePath.name
 
     @property
     def licensePath(self) -> Path:
@@ -205,16 +213,17 @@ class ExtensionBundle:
         )
         return {k: v for k, v in mapping.items() if v is not None}
 
-    # ================
-    # = classmethods =
-    # ================
+    def bundleExists(self):
+        """
+        Returns a bool indicating if the extension bundle exists.
+        """
+        return self.bundlePath.exists()
 
-    @classmethod
-    def load(cls, bundlePath: Path) -> Self:
+    def load(self, bundlePath: Path) -> Self:
         """
         From an existing bundle
         """
-        plistLibPath = bundlePath / cls.infoPlistFilename
+        plistLibPath = bundlePath / self.infoPlistFilename
         assert (
             plistLibPath.exists()
         ), "info.plist file is missing, required to load the extension"
@@ -224,27 +233,25 @@ class ExtensionBundle:
         requirementsPath = bundlePath / "requirements.txt"
         hashPath = bundlePath / ".hash"
 
-        return cls(
-            extensionName=plist.get("name") or plist.get("extensionName"),
-            path=bundlePath,
-            developer=plist["developer"],
-            developerURL=plist["developerURL"],
-            launchAtStartUp=bool(plist.get("launchAtStartUp", False)),
-            mainScript=plist.get("mainScript"),
-            version=plist["version"],
-            addToMenu=[loadFromPlist(i) for i in plist.get("addToMenu", [])],
-            html=plist.get("html"),
-            hash=hashPath.read_text() if hashPath.exists() else "",
-            documentationURL=plist.get("documentationURL"),
-            uninstallScript=plist.get("uninstallScript"),
-            timeStamp=plist.get("timeStamp"),
-            requiresVersionMajor=plist.get("requiresVersionMajor"),
-            requiresVersionMinor=plist.get("requiresVersionMinor"),
-            expireDate=plist.get("expireDate"),
-            license=licensePath.read_text() if licensePath.exists() else "",
-            requirements=(
-                requirementsPath.read_text() if requirementsPath.exists() else ""
-            ),
+        self.extensionName = plist.get("name") or plist.get("extensionName")
+        self.path = bundlePath
+        self.developer = plist["developer"]
+        self.developerURL = plist["developerURL"]
+        self.launchAtStartUp = bool(plist.get("launchAtStartUp", False))
+        self.mainScript = plist.get("mainScript")
+        self.version = plist["version"]
+        self.addToMenu = [loadFromPlist(i) for i in plist.get("addToMenu", [])]
+        self.html = plist.get("html")
+        self.hash = hashPath.read_text() if hashPath.exists() else ""
+        self.documentationURL = plist.get("documentationURL")
+        self.uninstallScript = plist.get("uninstallScript")
+        self.timeStamp = plist.get("timeStamp")
+        self.requiresVersionMajor = plist.get("requiresVersionMajor")
+        self.requiresVersionMinor = plist.get("requiresVersionMinor")
+        self.expireDate = plist.get("expireDate")
+        self.license = licensePath.read_text() if licensePath.exists() else ""
+        self.requirements = (
+            requirementsPath.read_text() if requirementsPath.exists() else ""
         )
 
     def save(
