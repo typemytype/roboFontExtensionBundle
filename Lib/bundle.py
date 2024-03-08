@@ -326,7 +326,7 @@ class ExtensionBundle:
         requirementsPath = bundlePath / "requirements.txt"
         hashPath = bundlePath / ".hash"
 
-        self.name = plist.get("name") or plist.get("extensionName")
+        self.name = plist.get("name") or plist.get("name")
         self.path = bundlePath
         self.developer = plist["developer"]
         self.developerURL = plist["developerURL"]
