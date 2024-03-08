@@ -164,6 +164,27 @@ class ExtensionBundle:
         return self.bundlePath / "requirements.txt"
 
     @property
+    def mainScriptPath(self):
+        """
+        Get the path of the main script.
+        """
+        return self.libFolder / self.mainScript
+
+    @property
+    def uninstallScriptPath(self):
+        """
+        Get the path to the script that uninstalls the extension.
+        """
+        return self.libFolder / self.uninstallScript
+
+    @property
+    def HTMLIndexPath(self):
+        """
+        Get the path to the `index.html` HTML help file.
+        """
+        return self.htmlFolder / self.indexHTMLName
+
+    @property
     def libFolder(self) -> Path:
         return self.bundlePath / "lib"
 
