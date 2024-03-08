@@ -37,7 +37,7 @@ def test_isValidURL(url, valid):
 def test_bundleInfo():
     bundle = ExtensionBundle()
 
-    bundle.extensionName = "test"
+    bundle.name = "test"
     assert bundle.infoDictionary["name"] == "test"
 
     bundle.developer = "me"
@@ -84,27 +84,31 @@ def test_folder_existance(dummyOnePath):
 
 
 def test_readExtension(dummyOnePath):
-    bundle = ExtensionBundle.load(dummyOnePath)
-    assert bundle.extensionName == "dummy1"
+    bundle = ExtensionBundle()
+    bundle.load(dummyOnePath)
+    assert bundle.name == "dummy1"
     assert bundle.developer == "TypeMyType"
     assert bundle.developerURL == "http://typemytype.com"
     assert bundle.version == "1.0"
 
 
 def test_override(dummyOnePath):
-    bundle = ExtensionBundle.load(dummyOnePath)
+    bundle = ExtensionBundle()
+    bundle.load(dummyOnePath)
     with pytest.raises(AssertionError):
         bundle.save(destPath=dummyOnePath)
 
 
 def test_repr(singleWindowControllerPath):
-    bundle = ExtensionBundle.load(bundlePath=singleWindowControllerPath)
+    bundle = ExtensionBundle()
+    bundle.load(bundlePath=singleWindowControllerPath)
     assert str(bundle) == "<ExtensionBundle: myExtension>"
 
 
 def test_expireDate(dummyOnePath):
-    bundle = ExtensionBundle.load(dummyOnePath)
-    bundle.extensionName = "dummy"
+    bundle = ExtensionBundle()
+    bundle.load(dummyOnePath)
+    bundle.name = "dummy"
     bundle.developer = "TypeMyType"
     bundle.developerURL = "http://typemytype.com"
     bundle.version = "1.0"
@@ -119,16 +123,18 @@ def test_expireDate(dummyOnePath):
 
 
 def test_save_dummy(dummyTwoPath):
-    bundle = ExtensionBundle.load(dummyTwoPath)
-    bundle.extensionName = "dummy3"
+    bundle = ExtensionBundle()
+    bundle.load(dummyTwoPath)
+    bundle.name = "dummy3"
     bundle.validate()
     with TemporaryDirectory() as tmpDir:
         bundle.save(Path(tmpDir) / "dummy3.roboFontExt")
 
 
 def test_save_template(singleWindowControllerPath):
-    bundle = ExtensionBundle.load(singleWindowControllerPath)
-    bundle.extensionName = "dummy3"
+    bundle = ExtensionBundle()
+    bundle.load(singleWindowControllerPath)
+    bundle.name = "dummy3"
     bundle.validate()
     with TemporaryDirectory() as tmpDir:
         bundle.save(Path(tmpDir) / "foobar.roboFontExt")
@@ -152,7 +158,7 @@ def test_invalid_plist():
 
 
 def test_validation():
-    bundle = ExtensionBundle(extensionName="myExtension")
+    bundle = ExtensionBundle(name="myExtension")
     # if not self.bundlePath.exists():
     assert not bundle.validate()
 
@@ -166,7 +172,7 @@ def test_validation():
         with pytest.raises(AssertionError):
             bundle.save(Path(tmpDir) / "foobar.robo")
 
-    bundle = ExtensionBundle(extensionName=False)  # type: ignore
+    bundle = ExtensionBundle(name=False)  # type: ignore
     assert not bundle.validate()
 
     bundle = ExtensionBundle(developer=False)  # type: ignore
@@ -184,7 +190,8 @@ def test_validation():
     bundle = ExtensionBundle(addToMenu=[{"path": False}])  # type: ignore
     assert not bundle.validate()
 
-    bundle = ExtensionBundle.load(bundlePath=Path("tests/dummy1.roboFontExt"))
+    bundle = ExtensionBundle()
+    bundle.load(bundlePath=Path("tests/dummy1.roboFontExt"))
     bundle.addToMenu = [{"path": Path("hello.py")}]  # type: ignore
     assert not bundle.validate()
 

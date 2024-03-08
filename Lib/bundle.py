@@ -1,8 +1,6 @@
 import ast
 import hashlib
 import plistlib
-import shutil
-import sys
 import tempfile
 import time
 from dataclasses import dataclass, field
@@ -13,31 +11,16 @@ from urllib.parse import urlparse
 
 import markdown
 import yaml
-from markdown.extensions.codehilite import \
-    CodeHiliteExtension as markdownCodeHiliteExtension
-from markdown.extensions.fenced_code import \
-    FencedCodeExtension as markdownFencedCodeExtension
+from markdown.extensions.codehilite import (
+    CodeHiliteExtension as markdownCodeHiliteExtension,
+)
+from markdown.extensions.fenced_code import (
+    FencedCodeExtension as markdownFencedCodeExtension,
+)
 from markdown.extensions.tables import TableExtension as markdownTableExtension
 from markdown.extensions.toc import TocExtension as markdownTocExtension
-from typing_extensions import (Any, NotRequired, Optional, Self, TypedDict,
-                               Union)
+from typing_extensions import Any, NotRequired, Optional, Self, TypedDict, Union
 from yaml.resolver import BaseResolver
-
-"""
-- Action
-    - every push should validate
-    - every tag should build and create a release
-        also check that tag and info.yaml version match
-            tag can be a normal version, regular release
-            they can also be beta-something, prerelease
-        if not, it should fail
-
-        name of release is going to be <extension name> <major.minor>
-
-    tag: v2.0
-    tag: beta-v2.1
-
-"""
 
 
 class AsLiteral(str):
@@ -96,7 +79,7 @@ def _loadAddToMenuFromPlist(mapping: dict) -> AddToMenuDict:
 @dataclass
 class ExtensionBundle:
 
-    extensionName: Optional[str] = None
+    name: Optional[str] = None
     developer: Optional[str] = None
     developerURL: Optional[str] = None
     launchAtStartUp: Optional[bool] = None
@@ -135,8 +118,8 @@ class ExtensionBundle:
             self.load(self.bundlePath)
 
     def __repr__(self) -> str:
-        if self.extensionName:
-            return f"<ExtensionBundle: {self.extensionName}>"
+        if self.name:
+            return f"<ExtensionBundle: {self.name}>"
         else:
             name = "None" if not self.bundlePath else self.bundlePath.name
             return f"<ExtensionBundle: {name}>"
@@ -148,11 +131,11 @@ class ExtensionBundle:
     @property
     def bundlePath(self) -> Path:
         if not self.path:
-            return Path(self.extensionName or "extension")
+            return Path(self.name or "extension")
         return self.path
 
     @property
-    def fileName(self) -> Path:
+    def fileName(self) -> str:
         return self.bundlePath.name
 
     @property
@@ -164,25 +147,25 @@ class ExtensionBundle:
         return self.bundlePath / "requirements.txt"
 
     @property
-    def mainScriptPath(self):
+    def mainScriptPath(self) -> Path:
         """
         Get the path of the main script.
         """
-        return self.libFolder / self.mainScript
+        return self.libFolder / (self.mainScript or "")
 
     @property
-    def uninstallScriptPath(self):
+    def uninstallScriptPath(self) -> Path:
         """
         Get the path to the script that uninstalls the extension.
         """
-        return self.libFolder / self.uninstallScript
+        return self.libFolder / (self.uninstallScript or "")
 
     @property
-    def HTMLIndexPath(self):
+    def HTMLIndexPath(self) -> Path:
         """
         Get the path to the `index.html` HTML help file.
         """
-        return self.htmlFolder / self.indexHTMLName
+        return self.htmlFolder / (self.indexHTMLName or "")
 
     @property
     def libFolder(self) -> Path:
@@ -217,7 +200,7 @@ class ExtensionBundle:
     @property
     def infoDictionary(self) -> dict[str, Any]:
         mapping = dict(
-            name=self.extensionName,
+            name=self.name,
             developer=self.developer,
             developerURL=self.developerURL,
             launchAtStartUp=self.launchAtStartUp,
@@ -240,10 +223,13 @@ class ExtensionBundle:
         """
         return self.bundlePath.exists()
 
-    def load(self, bundlePath: Path) -> Self:
+    def load(self, bundlePath: Union[str, Path]):
         """
         From an existing bundle
         """
+        if isinstance(bundlePath, str):
+            bundlePath = Path(bundlePath)
+
         plistLibPath = bundlePath / self.infoPlistFilename
         assert (
             plistLibPath.exists()
@@ -254,14 +240,16 @@ class ExtensionBundle:
         requirementsPath = bundlePath / "requirements.txt"
         hashPath = bundlePath / ".hash"
 
-        self.extensionName = plist.get("name") or plist.get("extensionName")
+        self.name = plist.get("name") or plist.get("extensionName")
         self.path = bundlePath
         self.developer = plist["developer"]
         self.developerURL = plist["developerURL"]
         self.launchAtStartUp = bool(plist.get("launchAtStartUp", False))
         self.mainScript = plist.get("mainScript")
         self.version = plist["version"]
-        self.addToMenu = [_loadAddToMenuFromPlist(i) for i in plist.get("addToMenu", [])]
+        self.addToMenu = [
+            _loadAddToMenuFromPlist(i) for i in plist.get("addToMenu", [])
+        ]
         self.html = plist.get("html")
         self.hash = hashPath.read_text() if hashPath.exists() else ""
         self.documentationURL = plist.get("documentationURL")
@@ -462,7 +450,7 @@ class ExtensionBundle:
             return False
 
         reprToAttribute = {
-            "Extension name": self.extensionName,
+            "Extension name": self.name,
             "Developer name": self.developer,
             "Developer URL": self.developerURL,
             "Extension version": self.version,

@@ -6,7 +6,7 @@ from pathlib import Path
 
 import yaml
 
-from .bundle import ExtensionBundle, loadFromPlist
+from .bundle import ExtensionBundle, _loadAddToMenuFromPlist
 
 
 def pack(
@@ -30,13 +30,13 @@ def pack(
     destPath = Path(buildData.get("extensionPath", f"{name}.roboFontExt"))
 
     bundle = ExtensionBundle(
-        extensionName=infoData.get("name") or infoData.get("extensionName"),
+        name=infoData.get("name") or infoData.get("extensionName"),
         developer=infoData["developer"],
         developerURL=infoData["developerURL"],
         launchAtStartUp=infoData["launchAtStartUp"],
         mainScript=infoData.get("mainScript"),
         version=infoData["version"],
-        addToMenu=[loadFromPlist(i) for i in infoData.get("addToMenu", [])],
+        addToMenu=[_loadAddToMenuFromPlist(i) for i in infoData.get("addToMenu", [])],
         html=infoData.get("html"),
         documentationURL=infoData.get("documentationURL"),
         uninstallScript=infoData.get("uninstallScript"),
@@ -61,8 +61,8 @@ def pack(
         htmlFolder=htmlFolder,
         resourcesFolder=resourcesFolder,
     )
-
-    bundle = ExtensionBundle.load(bundlePath=destPath)
+    bundle = ExtensionBundle()
+    bundle.load(bundlePath=destPath)
     errors = bundle.validationErrors()
 
     if zip_extension:
