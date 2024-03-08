@@ -38,7 +38,7 @@ if __name__ == "__main__":
     seen = set()
     for extension in cast(list[dict[str, str]], data["extensions"]):
         repoURL = extension["repository"]
-        extensionFolder = folder / cast(str, extension["extensionName"])
+        extensionFolder = folder / cast(str, extension["name"])
         if not extensionFolder.exists():
             extensionFolder.mkdir(exist_ok=True)
 
@@ -56,7 +56,7 @@ if __name__ == "__main__":
                 remoteZipURL = urlFormatters[key]["zipPath"].format(
                     repositoryPath=urlparse(extension["repository"]).path,
                     extensionPath=extension["extensionPath"],
-                    repositoryName=extension["extensionName"],
+                    repositoryName=extension["name"],
                 )
 
             archivePath = extensionFolder / "archive.zip"

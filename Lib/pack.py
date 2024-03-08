@@ -27,10 +27,11 @@ def pack(
         buildData = yaml.safe_load(yamlFile)
 
     name = infoData["name"]
-    destPath = Path(buildData.get("extensionPath", f"{name}.roboFontExt"))
+    destPath = Path(buildData.get("path", f"{name}.roboFontExt"))
 
     bundle = ExtensionBundle(
-        name=infoData.get("name") or infoData.get("extensionName"),
+        name=infoData.get("name"),
+        path=infoData.get("path"),
         developer=infoData["developer"],
         developerURL=infoData["developerURL"],
         launchAtStartUp=infoData["launchAtStartUp"],

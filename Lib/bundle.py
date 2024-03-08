@@ -326,7 +326,7 @@ class ExtensionBundle:
         requirementsPath = bundlePath / "requirements.txt"
         hashPath = bundlePath / ".hash"
 
-        self.name = plist.get("name") or plist.get("extensionName")
+        self.name = plist.get("name") or plist.get("name")
         self.path = bundlePath
         self.developer = plist["developer"]
         self.developerURL = plist["developerURL"]
@@ -454,6 +454,7 @@ class ExtensionBundle:
             "libFolder": "source/lib",
             "requirements": AsLiteral(self.requirements),
             "license": AsLiteral(self.license),
+            "path": self.path,
         }
         copytree(self.libFolder, destFolder / data["libFolder"])
         if self.htmlFolder.exists():
