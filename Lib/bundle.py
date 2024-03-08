@@ -82,7 +82,6 @@ def _loadAddToMenuFromPlist(mapping: dict) -> AddToMenuDict:
 @dataclass
 class ExtensionBundle:
     """Extension name."""
-
     name: Optional[str] = None
 
     """Developer name."""
