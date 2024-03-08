@@ -145,11 +145,11 @@ class ExtensionBundle:
     _errors: list[str] = field(default_factory=list)
 
     def __post_init__(self):
-        if self.bundlePath is not None:
+        if self.path is not None:
             # must be a Path object
-            self.bundlePath = Path(self.bundlePath)
+            self.path = Path(self.path)
         if self.bundleExists():
-            self.load(self.bundlePath)
+            self.load(self.path)
 
     def __repr__(self) -> str:
         if self.name:
