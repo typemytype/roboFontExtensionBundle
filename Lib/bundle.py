@@ -25,21 +25,6 @@ from typing_extensions import Any, NotRequired, Optional, Self, TypedDict, Union
 from yaml.resolver import BaseResolver
 
 """
-Notes:
-
-(outliner on a fork)
-- prepare yaml files in the repo that can be used to build the extension
-    - info.yaml (should reproduce plist)
-    - build.yaml, info necessary to build the extension
-- start to work on an existing github action
-
-- test the current state against all mechanic extensions
-    - we should have a script to run this from time to time
-
-- work on a script to update an existing extension to this new setup
-    --> it should become a method (unwrap/start new) of an instance
-
-
 - Action
     - every push should validate
     - every tag should build and create a release
