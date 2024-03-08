@@ -27,9 +27,7 @@ def pack(
         buildData = yaml.safe_load(yamlFile)
 
     name = infoData["name"]
-    destPath = Path(
-        buildData.get("extensionPath", f"{name.replace(' ', '_')}.roboFontExt")
-    )
+    destPath = Path(buildData.get("extensionPath", f"{name}.roboFontExt"))
 
     bundle = ExtensionBundle(
         extensionName=infoData.get("name") or infoData.get("extensionName"),
@@ -68,7 +66,11 @@ def pack(
     errors = bundle.validationErrors()
 
     if zip_extension:
-        shutil.make_archive(str(destPath), format="zip", base_dir=destPath)
+        archiveName = shutil.make_archive(
+            str(destPath), format="zip", base_dir=destPath
+        )
+        archivePath = destPath.parent / archiveName
+        archivePath.rename(archiveName.replace(" ", "_"))
         shutil.rmtree(destPath)
 
     if env := os.getenv("GITHUB_ENV"):
