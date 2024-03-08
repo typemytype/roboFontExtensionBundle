@@ -77,7 +77,7 @@ class AddToMenuDict(TypedDict):
     nestInSubmenus: NotRequired[Union[bool, int]]  # v2
 
 
-def loadFromPlist(mapping: dict) -> AddToMenuDict:
+def _loadAddToMenuFromPlist(mapping: dict) -> AddToMenuDict:
     dictionary: AddToMenuDict = {
         "path": mapping["path"],
         "preferredName": mapping["preferredName"],
@@ -96,7 +96,7 @@ def loadFromPlist(mapping: dict) -> AddToMenuDict:
 @dataclass
 class ExtensionBundle:
 
-    name: Optional[str] = None
+    extensionName: Optional[str] = None
     developer: Optional[str] = None
     developerURL: Optional[str] = None
     launchAtStartUp: Optional[bool] = None
@@ -240,7 +240,7 @@ class ExtensionBundle:
         self.launchAtStartUp = bool(plist.get("launchAtStartUp", False))
         self.mainScript = plist.get("mainScript")
         self.version = plist["version"]
-        self.addToMenu = [loadFromPlist(i) for i in plist.get("addToMenu", [])]
+        self.addToMenu = [_loadAddToMenuFromPlist(i) for i in plist.get("addToMenu", [])]
         self.html = plist.get("html")
         self.hash = hashPath.read_text() if hashPath.exists() else ""
         self.documentationURL = plist.get("documentationURL")
