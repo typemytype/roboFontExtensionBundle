@@ -13,15 +13,14 @@ from urllib.parse import urlparse
 
 import markdown
 import yaml
-from markdown.extensions.codehilite import (
-    CodeHiliteExtension as markdownCodeHiliteExtension,
-)
-from markdown.extensions.fenced_code import (
-    FencedCodeExtension as markdownFencedCodeExtension,
-)
+from markdown.extensions.codehilite import \
+    CodeHiliteExtension as markdownCodeHiliteExtension
+from markdown.extensions.fenced_code import \
+    FencedCodeExtension as markdownFencedCodeExtension
 from markdown.extensions.tables import TableExtension as markdownTableExtension
 from markdown.extensions.toc import TocExtension as markdownTocExtension
-from typing_extensions import Any, NotRequired, Optional, Self, TypedDict, Union
+from typing_extensions import (Any, NotRequired, Optional, Self, TypedDict,
+                               Union)
 from yaml.resolver import BaseResolver
 
 """
