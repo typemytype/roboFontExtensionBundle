@@ -351,10 +351,10 @@ class ExtensionBundle:
 
     def save(
         self,
-        destPath: Path,
-        libFolder: Optional[Path] = None,
-        htmlFolder: Optional[Path] = None,
-        resourcesFolder: Optional[Path] = None,
+        destPath: Union[str, Path],
+        libFolder: Optional[Union[str, Path]] = None,
+        htmlFolder: Optional[Union[str, Path]] = None,
+        resourcesFolder: Optional[Union[str, Path]] = None,
     ):
         """
         Saves the bundle to disk
@@ -585,7 +585,7 @@ class ExtensionBundle:
                         self._errors.append(msg)
 
                 if "shortKey" not in add:
-                    msg = f"`shortKey` missing from Add to Menu dictionary"
+                    msg = "`shortKey` missing from Add to Menu dictionary"
                     self._errors.append(msg)
                 elif not (
                     isinstance(add["shortKey"], str)
