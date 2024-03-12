@@ -360,6 +360,14 @@ class ExtensionBundle:
         Saves the bundle to disk
 
         """
+        destPath = Path(destPath)
+        if libFolder is not None:
+            libFolder = Path(libFolder)
+        if htmlFolder is not None:
+            htmlFolder = Path(htmlFolder)
+        if resourcesFolder is not None:
+            resourcesFolder = Path(resourcesFolder)
+
         assert self.hash == "", "Cannot save this extension"
         assert destPath.suffix == self.fileExtension, "Wrong file extension"
         assert destPath != self.bundlePath, "You cannot override the same file"
