@@ -442,12 +442,13 @@ class ExtensionBundle:
                         digest.update(buf)
         return digest.hexdigest()
 
-    def unpack(self, destFolder: Path):
+    def unpack(self, destFolder: Union[str, Path]):
         """
         Saves data on disk as unpacked source data
         Helpful for converting existing bundles into repositories
 
         """
+        destFolder = Path(destFolder)
         destFolder.mkdir(parents=True, exist_ok=True)
 
         with open(destFolder / "info.yaml", mode="w") as yamlFile:
@@ -656,12 +657,14 @@ class ExtensionBundle:
         if url := self.documentationURL:
             if not isValidURL(url):
                 msg = "Documentation URL is not valid"
-                self._errors.append(msg)
+                warning.warn()
+                #self._errors.append(msg)
 
         if url := self.developerURL:
             if not isValidURL(url):
                 msg = "Developer URL is not valid"
-                self._errors.append(msg)
+                warning.warn()
+                #self._errors.append(msg)
 
         if self.expireDate:
             try:
