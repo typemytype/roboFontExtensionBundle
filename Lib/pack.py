@@ -76,11 +76,11 @@ def pack(
 
         if env := os.getenv("GITHUB_ENV"):
             with open(env, mode="a") as envFile:  # type: ignore
-                envFile.write(f"EXTENSION_ZIP_PATH={archivePath}")
+                envFile.write(f"EXTENSION_ZIP_PATH={archivePath}\n")
 
     if env := os.getenv("GITHUB_ENV"):
         with open(env, mode="a") as envFile:  # type: ignore
-            envFile.write(f"EXTENSION_PATH={destPath}")
+            envFile.write(f"EXTENSION_PATH={destPath}\n")
 
     if errors:
         print(errors)
