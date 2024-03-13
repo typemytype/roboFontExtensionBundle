@@ -71,8 +71,12 @@ def pack(
             str(destPath), format="zip", base_dir=destPath
         )
         archivePath = destPath.parent / archiveName
-        archivePath.rename(archiveName.replace(" ", "_"))
+        archivePath = archivePath.rename(archiveName.replace(" ", "_"))
         shutil.rmtree(destPath)
+
+        if env := os.getenv("GITHUB_ENV"):
+            with open(env, mode="a") as envFile:  # type: ignore
+                envFile.write(f"EXTENSION_ZIP_PATH={archivePath}")
 
     if env := os.getenv("GITHUB_ENV"):
         with open(env, mode="a") as envFile:  # type: ignore
