@@ -409,6 +409,7 @@ class ExtensionBundle:
 
         copytree(tempDir, destPath)
         rmtree(tempDir)
+        self.path = destPath
         return self.validate()
 
     def extensionHash(self, passphrase="") -> str:
