@@ -103,7 +103,7 @@ unpack/
 
 ## Use with Github Actions
 
-The RoboFont team prepared a ready-to-use action for Github that you can include in your workflows:
+The RoboFont team prepared a ready-to-use [action](https://github.com/typemytype/roboFont-Extension-action) for Github that you can include in your workflows:
 
 ```yaml
 name: Validate and Build the Extension
