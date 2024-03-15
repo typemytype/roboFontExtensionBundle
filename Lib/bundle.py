@@ -410,6 +410,10 @@ class ExtensionBundle:
         copytree(tempDir, destPath)
         rmtree(tempDir)
         self.path = destPath
+
+        if self.expireDate:
+            self.hashPath.write_text(self.extensionHash())
+
         return self.validate()
 
     def extensionHash(self, passphrase="") -> str:
