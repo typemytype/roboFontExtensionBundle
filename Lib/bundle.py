@@ -135,6 +135,9 @@ class ExtensionBundle:
     """Extensions requirements. Equivalent to a pip requirements.txt."""
     requirements: str = ""
 
+    """Extension lib."""
+    lib: dict = field(default_factory=dict)
+
     # constants
     indexHTMLName = "index.html"
     fileExtension = ".roboFontExt"
@@ -284,7 +287,7 @@ class ExtensionBundle:
         Returns a dictionary matching the info.plist data structure.
 
         """
-        mapping = dict(
+        mapping = self.lib | dict(
             name=self.name,
             developer=self.developer,
             developerURL=self.developerURL,
@@ -326,28 +329,29 @@ class ExtensionBundle:
         requirementsPath = bundlePath / "requirements.txt"
         hashPath = bundlePath / ".hash"
 
-        self.name = plist.get("name") or plist.get("name")
+        self.name = plist.pop("name", None)
         self.path = bundlePath
-        self.developer = plist["developer"]
-        self.developerURL = plist["developerURL"]
-        self.launchAtStartUp = bool(plist.get("launchAtStartUp", False))
-        self.mainScript = plist.get("mainScript")
-        self.version = plist["version"]
+        self.developer = plist.pop("developer", None)
+        self.developerURL = plist.pop("developerURL", None)
+        self.launchAtStartUp = bool(plist.pop("launchAtStartUp", False))
+        self.mainScript = plist.pop("mainScript", None)
+        self.version = plist.pop("version", None)
         self.addToMenu = [
-            _loadAddToMenuFromPlist(i) for i in plist.get("addToMenu", [])
+            _loadAddToMenuFromPlist(i) for i in plist.pop("addToMenu", [])
         ]
-        self.html = plist.get("html")
+        self.html = plist.pop("html", False)
         self.hash = hashPath.read_text() if hashPath.exists() else ""
-        self.documentationURL = plist.get("documentationURL")
-        self.uninstallScript = plist.get("uninstallScript")
-        self.timeStamp = plist.get("timeStamp")
-        self.requiresVersionMajor = plist.get("requiresVersionMajor")
-        self.requiresVersionMinor = plist.get("requiresVersionMinor")
-        self.expireDate = plist.get("expireDate")
+        self.documentationURL = plist.pop("documentationURL", None)
+        self.uninstallScript = plist.pop("uninstallScript", None)
+        self.timeStamp = float(plist.pop("timeStamp", None))
+        self.requiresVersionMajor = plist.pop("requiresVersionMajor", None)
+        self.requiresVersionMinor = plist.pop("requiresVersionMinor", None)
+        self.expireDate = plist.pop("expireDate", None)
         self.license = licensePath.read_text(encoding="utf-8") if licensePath.exists() else ""
         self.requirements = (
             requirementsPath.read_text(encoding="utf-8") if requirementsPath.exists() else ""
         )
+        self.lib = plist
 
     def save(
         self,
