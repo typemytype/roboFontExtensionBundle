@@ -459,7 +459,7 @@ class ExtensionBundle:
 
         """
         destFolder = Path(destFolder)
-        destFolder.mkdir(parents=True, exist_ok=True)
+        destFolder.mkdir(parents=True, exist_ok=False)
 
         with open(destFolder / "info.yaml", mode="w") as yamlFile:
             yaml.dump(
