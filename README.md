@@ -12,12 +12,6 @@ pip install git+https://github.com/typemytype/extensionBundle
 
 It is always adviced to use a virtual environment.
 
-## Class interface overview
-
-`class ExtensionBundle`
-> `name`
-> Extension name. `Optional[str]`. Default is `None`
-
 ## Command line interface
 
 The package has a command line interface `pack` accepting three arguments:
