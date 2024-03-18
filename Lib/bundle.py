@@ -472,7 +472,7 @@ class ExtensionBundle:
             "libFolder": "source/lib",
             "requirements": AsLiteral(self.requirements),
             "license": AsLiteral(self.license),
-            "path": self.path,
+            "path": str(self.path),
         }
         copytree(self.libFolder, destFolder / data["libFolder"])
         if self.htmlFolder.exists():
