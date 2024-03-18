@@ -8,7 +8,6 @@ You can install the package using `pip`:
 
 ```
 pip install git+https://github.com/typemytype/extensionBundle
-
 ```
 
 It is always adviced to use a virtual environment.
@@ -87,7 +86,7 @@ It will result in the following folder structure:
 
 ```
 myExtension.roboFontExt
-unpack/
+unpacked/
 ├─ info.yaml
 ├─ build.yaml
 ├─ source/
@@ -118,6 +117,8 @@ jobs:
         uses: typemytype/roboFont-Extension-action@v0.1.0
 
 ```
+
+Besides allowing actions in your repository, you'll also need to provide read and write permissions. Check Settings > Actions > General before setting the workflow.
 
 ## Templates
 
