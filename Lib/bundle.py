@@ -152,7 +152,7 @@ class ExtensionBundle:
         if self.path is not None:
             # must be a Path object
             self.path = Path(self.path)
-        if self.bundleExists():
+        if self.bundleExists() and self.path:
             self.load(self.path)
 
     def __repr__(self) -> str:
