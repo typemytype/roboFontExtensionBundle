@@ -109,6 +109,8 @@ jobs:
     steps:
       - name: Validate and Build
         uses: typemytype/roboFont-Extension-action@v0.1.0
+        with:
+            autotagging: false # default false
 
 ```
 
