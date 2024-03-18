@@ -3,6 +3,7 @@ import hashlib
 import plistlib
 import tempfile
 import time
+import warnings
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
@@ -666,14 +667,12 @@ class ExtensionBundle:
         if url := self.documentationURL:
             if not isValidURL(url):
                 msg = "Documentation URL is not valid"
-                warning.warn()
-                #self._errors.append(msg)
+                warnings.warn(msg)
 
         if url := self.developerURL:
             if not isValidURL(url):
                 msg = "Developer URL is not valid"
-                warning.warn()
-                #self._errors.append(msg)
+                warnings.warn(msg)
 
         if self.expireDate:
             try:
