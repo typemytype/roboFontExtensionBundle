@@ -164,6 +164,13 @@ def test_invalid_plist():
         bundle.load(bundlePath=Path("tests/corrupted_plist.roboFontExt"))
 
 
+def test_private_lib():
+    bundle = ExtensionBundle()
+    bundle.load(bundlePath=Path("tests/dummyLib.roboFontExt"))
+    assert bundle.lib["com.roboFont.privateKey"] == "hello world"
+    assert bundle.infoDictionary["com.roboFont.privateKey"] == "hello world"
+
+
 def test_validation():
     bundle = ExtensionBundle(name="myExtension")
     # if not self.bundlePath.exists():
