@@ -26,6 +26,8 @@ urlToValid = {
     532: False,
     "dkakasdkjdjakdjadjfalskdjfalk": False,
     "https://stackoverflow.com": True,
+    # no double urls allowed
+    "https://stackoverflow.com https://stackoverflow.com": False,
 }
 
 

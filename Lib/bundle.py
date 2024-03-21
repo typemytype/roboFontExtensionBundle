@@ -50,6 +50,8 @@ def isValidURL(url: str) -> bool:
     Checks is a URL is valid, code from https://stackoverflow.com/a/38020041/1925198
 
     """
+    if not isinstance(url, str) or " " in url:
+        return False
     try:
         result = urlparse(url)
         return all([result.scheme, result.netloc])
