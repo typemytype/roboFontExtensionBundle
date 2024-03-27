@@ -7,7 +7,7 @@ This repository contains the code used by RoboFont to build plugins. The RoboFon
 You can install the package using `pip`:
 
 ```
-pip install git+https://github.com/typemytype/extensionBundle
+pip install git+https://github.com/typemytype/roboFontExtensionBundle
 ```
 
 It is always adviced to use a virtual environment.
