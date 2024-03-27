@@ -1,6 +1,6 @@
 # RoboFont Extension Bundle
 
-This repository contains the code used by RoboFont to build plugins. The RoboFont team decided to open-source this package to allow developers to build extensions outside RoboFont, using GitHub actions or other CD/CI tools. The code is OS agnostic and completely type annotated.
+This repository contains the code used by RoboFont to build plugins. The RoboFont team decided to open-source this package to allow developers to build extensions outside RoboFont, using GitHub actions or other CI/CD tools. The code is OS agnostic and completely type annotated.
 
 ## Installation
 
