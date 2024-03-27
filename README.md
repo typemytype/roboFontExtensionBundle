@@ -93,6 +93,7 @@ unpacked/
 
 ```
 
+Then you can remove the `.roboFontExt` file and move out the files from the `unpacked` folder.
 
 ## Use with Github Actions
 
