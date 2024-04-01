@@ -36,7 +36,7 @@ def pack(
         developerURL=infoData["developerURL"],
         launchAtStartUp=infoData["launchAtStartUp"],
         mainScript=infoData.get("mainScript"),
-        version=infoData["version"],
+        version=str(infoData["version"]),
         addToMenu=[_loadAddToMenuFromPlist(i) for i in infoData.get("addToMenu", [])],
         html=infoData.get("html"),
         documentationURL=infoData.get("documentationURL"),
