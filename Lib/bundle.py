@@ -402,7 +402,7 @@ class ExtensionBundle:
 
         plist = self.infoDictionary
         (tempDir / "info.plist").write_bytes(
-            plistlib.dumps({k: v for k, v in plist.items() if v})
+            plistlib.dumps({k: v for k, v in plist.items() if v is not None})
         )
 
         if self.license:
