@@ -212,6 +212,12 @@ def test_validation():
     bundle.addToMenu = [{"path": "hello.py", "preferredName": "Hello", "shortKey": "H"}]
     assert bundle.validate()
 
+    bundle.addToMenu = [{"path": "hello.py", "preferredName": "Hello", "shortKey": "H"}, "---"]
+    assert bundle.validate()
+
+    bundle.addToMenu = [{"path": "hello.py", "preferredName": "Hello", "shortKey": "H"}, "----"]  # type: ignore
+    assert not bundle.validate()
+
     bundle.addToMenu = [{"path": "hello.py", "preferredName": "Hello", "shortKey": "H", "nestInSubmenus": "yes"}]  # type: ignore
     assert not bundle.validate()
 

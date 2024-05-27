@@ -20,7 +20,7 @@ from markdown.extensions.fenced_code import (
 )
 from markdown.extensions.tables import TableExtension as markdownTableExtension
 from markdown.extensions.toc import TocExtension as markdownTocExtension
-from typing_extensions import Any, NotRequired, Optional, Self, TypedDict, Union
+from typing_extensions import Any, NotRequired, Optional, Self, TypedDict, Union, Literal
 from yaml.resolver import BaseResolver
 
 
@@ -66,7 +66,9 @@ class AddToMenuDict(TypedDict):
     nestInSubmenus: NotRequired[Union[bool, int]]  # v2
 
 
-def _loadAddToMenuFromPlist(mapping: dict) -> AddToMenuDict:
+def _loadAddToMenuFromPlist(mapping: Union[dict, Literal["---"]]) -> Union[AddToMenuDict, Literal["---"]]:
+    if mapping == "---":
+        return "---"
     dictionary: AddToMenuDict = {
         "path": mapping["path"],
         "preferredName": mapping["preferredName"],
@@ -103,7 +105,7 @@ class ExtensionBundle:
     version: Optional[str] = None
 
     """List of dictionaries containing information for building the extension menu in RoboFont."""
-    addToMenu: list[AddToMenuDict] = field(default_factory=list)
+    addToMenu: list[Union[AddToMenuDict, Literal["---"]]] = field(default_factory=list)
 
     """Extension path. The filename can be different from the extension name."""
     path: Optional[Path] = None
@@ -589,6 +591,11 @@ class ExtensionBundle:
             self._errors.append(msg)
         else:
             for add in self.addToMenu:
+                if isinstance(add, str):
+                    if add != "---":
+                        msg = f"`{add}` must be a dictionary or a `'---'`."
+                        self._errors.append(msg)
+                    continue
                 for key in ["path", "preferredName"]:
                     if key not in add:
                         msg = f"`{key}` missing from Add to Menu dictionary"
