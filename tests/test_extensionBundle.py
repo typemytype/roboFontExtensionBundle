@@ -7,17 +7,17 @@ from roboFontExtensionBundle.bundle import ExtensionBundle, isValidURL
 
 @pytest.fixture
 def dummyOnePath():
-    return Path("tests/dummy1.roboFontExt")
+    return Path("dummy1.roboFontExt")
 
 
 @pytest.fixture
 def dummyTwoPath():
-    return Path("tests/dummy2.roboFontExt")
+    return Path("dummy2.roboFontExt")
 
 
 @pytest.fixture
 def singleWindowControllerPath():
-    return Path("tests/single_window_controller_template.roboFontExt")
+    return Path("single_window_controller_template.roboFontExt")
 
 
 urlToValid = {
@@ -158,15 +158,15 @@ def test_extensionHash(dummyOnePath, dummyTwoPath):
 def test_invalid_plist():
     with pytest.raises(AssertionError):
         bundle = ExtensionBundle()
-        bundle.load(bundlePath=Path("tests/missing_plist.roboFontExt"))
+        bundle.load(bundlePath=Path("missing_plist.roboFontExt"))
     with pytest.raises(Exception):
         bundle = ExtensionBundle()
-        bundle.load(bundlePath=Path("tests/corrupted_plist.roboFontExt"))
+        bundle.load(bundlePath=Path("corrupted_plist.roboFontExt"))
 
 
 def test_private_lib():
     bundle = ExtensionBundle()
-    bundle.load(bundlePath=Path("tests/dummyLib.roboFontExt"))
+    bundle.load(bundlePath=Path("dummyLib.roboFontExt"))
     assert bundle.lib["com.roboFont.privateKey"] == "hello world"
     assert bundle.infoDictionary["com.roboFont.privateKey"] == "hello world"
 
@@ -205,7 +205,7 @@ def test_validation():
     assert not bundle.validate()
 
     bundle = ExtensionBundle()
-    bundle.load(bundlePath=Path("tests/dummy1.roboFontExt"))
+    bundle.load(bundlePath=Path("dummy1.roboFontExt"))
     bundle.addToMenu = [{"path": Path("hello.py")}]  # type: ignore
     assert not bundle.validate()
 
