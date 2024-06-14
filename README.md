@@ -14,7 +14,7 @@ It is always adviced to use a virtual environment.
 
 ## Command line interface
 
-The package has a command line interface `pack` accepting three arguments:
+The package has a command line interface `pack_extension` accepting three arguments:
 - `--info_path`: info.yaml path on disk
 - `--build_path`: build.yaml path on disk
 - `--zip`: boolean for archiving the extension or not
@@ -94,6 +94,16 @@ unpacked/
 ```
 
 Then you can remove the `.roboFontExt` file and move out the files from the `unpacked` folder.
+
+### Build `.roboFontExt` extension package on the command line
+
+Pack a folder of extension source files (see folder structure above) into a `.roboFontExt` package:
+
+```sh
+cd myExtension
+pack_extension
+```
+
 
 ## Use with Github Actions
 
