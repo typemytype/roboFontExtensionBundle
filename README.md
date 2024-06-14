@@ -83,13 +83,13 @@ myExtension.roboFontExt
 unpacked/
 ├─ info.yaml
 ├─ build.yaml
-├─ source/
-│  ├─ lib/
-│  │  ├─ tool.py
-│  ├─ html/
-│  │  ├─ index.html
-│  ├─ resources/
-│  │  ├─ image.png
+└─ source/
+   ├─ lib/
+   │  └─ tool.py
+   ├─ html/
+   │  └─ index.html
+   └─ resources/
+      └─ image.png
 
 ```
 
