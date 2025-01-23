@@ -38,9 +38,11 @@ def extensionBundleInstall(root, infoPath=Path("info.yaml"), buildPath=Path("bui
         htmlFolder=htmlFolder,
         resourcesFolder=resourcesFolder,
     )
-
-    if not bundle.validationErrors():
+    errors = bundle.validationErrors()
+    if not errors:
         bundle.install()
+    else:
+        print(errors)
 
     if not keepExtension:
         shutil.rmtree(destPath)
