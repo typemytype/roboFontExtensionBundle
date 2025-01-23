@@ -1,5 +1,5 @@
 """
-A RoboFont script for developpers to pack and install extensions from source.
+A RoboFont script for developers to pack and install extensions from source.
 """
 import yaml
 from pathlib import Path
@@ -76,7 +76,7 @@ class PackAndInstallController(ezui.WindowController):
             )
         )
         self.w = ezui.EZWindow(
-            title="Pack and Intall Extension",
+            title="Pack and Install Extension",
             content=content,
             descriptionData=descriptionData,
             size="auto",
