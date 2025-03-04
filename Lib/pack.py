@@ -26,27 +26,28 @@ def pack(
     with open(build_path) as yamlFile:
         buildData = yaml.safe_load(yamlFile)
 
-    name = infoData["name"]
+    name = infoData.pop("name")
     destPath = Path(buildData.get("path", f"{name}.roboFontExt"))
 
     bundle = ExtensionBundle(
-        name=infoData.get("name"),
-        path=infoData.get("path"),
-        developer=infoData["developer"],
-        developerURL=infoData["developerURL"],
-        launchAtStartUp=infoData["launchAtStartUp"],
-        mainScript=infoData.get("mainScript"),
+        name=name,
+        path=infoData.pop("path", None),
+        developer=infoData.pop("developer"),
+        developerURL=infoData.pop("developerURL"),
+        launchAtStartUp=infoData.pop("launchAtStartUp"),
+        mainScript=infoData.pop("mainScript", None),
         version=str(infoData["version"]),
-        addToMenu=[_loadAddToMenuFromPlist(i) for i in infoData.get("addToMenu", [])],
-        html=infoData.get("html"),
-        documentationURL=infoData.get("documentationURL"),
-        uninstallScript=infoData.get("uninstallScript"),
-        requiresVersionMajor=infoData.get("requiresVersionMajor"),
-        requiresVersionMinor=infoData.get("requiresVersionMinor"),
-        expireDate=infoData.get("expireDate"),
-        license=buildData.get("license", ""),
-        requirements=buildData.get("requirements", "") or "",
+        addToMenu=[_loadAddToMenuFromPlist(i) for i in infoData.pop("addToMenu", [])],
+        html=infoData.pop("html", None),
+        documentationURL=infoData.pop("documentationURL", None),
+        uninstallScript=infoData.pop("uninstallScript", None),
+        requiresVersionMajor=infoData.pop("requiresVersionMajor", None),
+        requiresVersionMinor=infoData.pop("requiresVersionMinor", None),
+        expireDate=infoData.pop("expireDate", None),
+        license=buildData.pop("license", ""),
+        requirements=buildData.pop("requirements", "") or "",
     )
+    bundle.lib.update(infoData)
 
     htmlFolder = buildData.get("htmlFolder")
     if htmlFolder is not None:
