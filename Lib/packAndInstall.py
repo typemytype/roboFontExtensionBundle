@@ -4,6 +4,7 @@ A RoboFont script for developpers to pack and install extensions from source.
 import yaml
 from pathlib import Path
 import shutil
+from roboFontExtensionBundle.bundle import _loadAddToMenuFromPlist
 from mojo.extensions import ExtensionBundle
 import ezui
 
@@ -16,11 +17,27 @@ def extensionBundleInstall(root, infoPath=Path("info.yaml"), buildPath=Path("bui
     with open(root / buildPath) as yamlFile:
         buildData = yaml.safe_load(yamlFile)
 
+    name = infoData.pop("name")
+
     bundle = ExtensionBundle(
-        **infoData,
-        license=buildData.get("license", ""),
-        requirements=buildData.get("requirements", "") or ""
+        name=name,
+        path=infoData.pop("path", None),
+        developer=infoData.pop("developer"),
+        developerURL=infoData.pop("developerURL"),
+        launchAtStartUp=infoData.pop("launchAtStartUp"),
+        mainScript=infoData.pop("mainScript", None),
+        version=str(infoData["version"]),
+        addToMenu=[_loadAddToMenuFromPlist(i) for i in infoData.pop("addToMenu", [])],
+        html=infoData.pop("html", None),
+        documentationURL=infoData.pop("documentationURL", None),
+        uninstallScript=infoData.pop("uninstallScript", None),
+        requiresVersionMajor=infoData.pop("requiresVersionMajor", None),
+        requiresVersionMinor=infoData.pop("requiresVersionMinor", None),
+        expireDate=infoData.pop("expireDate", None),
+        license=buildData.pop("license", ""),
+        requirements=buildData.pop("requirements", "") or "",
     )
+    bundle.lib.update(infoData)
 
     destPath = root / buildData.get("path", f"{bundle.name}.roboFontExt")
 
